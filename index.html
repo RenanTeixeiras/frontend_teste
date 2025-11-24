@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Diagnóstico Empresarial CE Infinity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #f3f4f6;
+        color: #111827;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.25rem;
+      }
+
+      p.subtitle {
+        color: #4b5563;
+      }
+
+      .area-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 10px 15px -10px rgba(0, 0, 0, 0.15);
+        margin-bottom: 1rem;
+      }
+
+      .area-card h2 {
+        margin-bottom: 0.75rem;
+      }
+
+      .question-list {
+        list-style: decimal;
+        padding-left: 1.5rem;
+      }
+
+      .question-item {
+        margin-bottom: 1rem;
+      }
+
+      .answer-group {
+        margin-top: 0.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .answer-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        background: #f9fafb;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      .answer-pill input {
+        margin: 0;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin: 1.5rem 0;
+      }
+
+      button.primary {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background: #2563eb;
+        color: white;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+
+      button.primary:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      .error {
+        margin-top: 0.75rem;
+        color: #b91c1c;
+      }
+
+      .resultados {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 10px 15px -10px rgba(0, 0, 0, 0.15);
+        margin-bottom: 2rem;
+      }
+
+      .resultados h2 {
+        margin-bottom: 0.75rem;
+      }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .result-card {
+        border-radius: 0.75rem;
+        background: #f9fafb;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .result-score {
+        font-size: 0.9rem;
+        color: #4b5563;
+        margin-bottom: 0.4rem;
+      }
+
+      .result-message {
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Diagnóstico Empresarial CE Infinity</h1>
+        <p class="subtitle">
+          Responda às perguntas de cada área para receber os feedbacks
+          personalizados.
+        </p>
+      </header>
+
+      <form id="diagnostico-form">
+        <!-- As áreas e perguntas serão geradas via JS -->
+      </form>
+
+      <div class="actions">
+        <button type="button" class="primary" id="btn-enviar">
+          Enviar diagnóstico
+        </button>
+      </div>
+
+      <div id="error" class="error"></div>
+
+      <section id="resultados" class="resultados" style="display: none">
+        <h2>Resultados por área</h2>
+        <div id="result-grid" class="result-grid"></div>
+      </section>
+    </div>
+
+    <script>
+      // === CONFIGURAÇÃO ===
+      const API_URL = "https://ce-infinity.onrender.com/api/diagnostico"; // <-- TROCAR AQUI
+
+      const AREAS = {
+        Marketing: [
+          "Sua empresa tem metas de vendas mensais e acompanha os resultados?",
+          "Existe uma estratégia de marketing digital ativa (redes sociais, anúncios, e-mail etc.)?",
+          "O atendimento e o pós-venda seguem um padrão de qualidade definido?",
+          "A taxa de conversão de clientes é monitorada e analisada regularmente?",
+          "A fidelização e recompra dos clientes fazem parte da estratégia comercial?",
+        ],
+        Operações: [
+          "A empresa possui processos operacionais formalizados e padronizados?",
+          "Existe controle atualizado de estoque (ou agenda de capacidade, se for serviço)?",
+          "As compras são planejadas com base em previsões e indicadores de demanda?",
+          "O ciclo operacional (do pedido à entrega) é medido e acompanhado?",
+          "A empresa analisa perdas, devoluções ou retrabalhos?",
+        ],
+        Financeiro: [
+          "A empresa possui controle de fluxo de caixa projetado e realizado?",
+          "O DRE é apurado mensalmente e analisado por unidade?",
+          "Há planejamento orçamentário anual e acompanhamento do realizado x orçado?",
+          "A precificação leva em conta custos, impostos e margem desejada?",
+          "Existe acompanhamento de indicadores financeiros e fiscais?",
+        ],
+        Pessoas: [
+          "A empresa tem cargos e responsabilidades claramente definidos?",
+          "Existem treinamentos ou capacitações periódicas?",
+          "Há avaliações de desempenho formais ou feedbacks estruturados?",
+          "O clima organizacional é acompanhado e discutido com a equipe?",
+          "O índice de rotatividade é monitorado e analisado?",
+        ],
+        Processos: [
+          "Existem manuais operacionais ou fluxogramas documentados?",
+          "O uso da tecnologia contribui para o controle e produtividade?",
+          "Os indicadores de desempenho (KPIs) são definidos e acompanhados?",
+          "Há rotina de revisão e melhoria contínua dos processos?",
+          "As operações são auditadas periodicamente?",
+        ],
+        Estratégia: [
+          "A empresa possui um plano estratégico formalizado e metas claras?",
+          "As decisões são baseadas em dados e relatórios de desempenho?",
+          "Há acompanhamento periódico de indicadores estratégicos?",
+          "A empresa tem clareza sobre oportunidades de expansão ou inovação?",
+          "A estrutura societária e a governança são formalizadas e revisadas?",
+        ],
+      };
+
+      const answerOptions = [
+        { label: "Sim", value: 2, description: "2 pontos" },
+        { label: "Não", value: 1, description: "1 ponto" },
+        { label: "Não sei", value: 0, description: "0 pontos" },
+      ];
+
+      // === GERAR FORMULÁRIO ===
+      const formEl = document.getElementById("diagnostico-form");
+
+      Object.entries(AREAS).forEach(([areaNome, perguntas]) => {
+        const areaCard = document.createElement("section");
+        areaCard.className = "area-card";
+
+        const h2 = document.createElement("h2");
+        h2.textContent = areaNome;
+        areaCard.appendChild(h2);
+
+        const ol = document.createElement("ol");
+        ol.className = "question-list";
+
+        perguntas.forEach((pergunta, index) => {
+          const li = document.createElement("li");
+          li.className = "question-item";
+
+          const p = document.createElement("p");
+          p.textContent = pergunta;
+          li.appendChild(p);
+
+          const answerGroup = document.createElement("div");
+          answerGroup.className = "answer-group";
+
+          answerOptions.forEach((opt) => {
+            const label = document.createElement("label");
+            label.className = "answer-pill";
+
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = `${areaNome}__${index}`; // nome por pergunta
+            input.value = String(opt.value);
+
+            const spanText = document.createElement("span");
+            spanText.textContent = opt.label;
+
+            const spanDesc = document.createElement("span");
+            spanDesc.style.opacity = "0.7";
+            spanDesc.style.fontSize = "0.75rem";
+            spanDesc.textContent = ` (${opt.description})`;
+
+            label.appendChild(input);
+            label.appendChild(spanText);
+            label.appendChild(spanDesc);
+
+            answerGroup.appendChild(label);
+          });
+
+          li.appendChild(answerGroup);
+          ol.appendChild(li);
+        });
+
+        areaCard.appendChild(ol);
+        formEl.appendChild(areaCard);
+      });
+
+      // === ENVIO DO FORMULÁRIO ===
+      const btnEnviar = document.getElementById("btn-enviar");
+      const errorEl = document.getElementById("error");
+      const resultadosSection = document.getElementById("resultados");
+      const resultGrid = document.getElementById("result-grid");
+
+      btnEnviar.addEventListener("click", async () => {
+        errorEl.textContent = "";
+        resultadosSection.style.display = "none";
+        resultGrid.innerHTML = "";
+
+        const payload = {};
+
+        // montar payload por área
+        for (const [areaNome, perguntas] of Object.entries(AREAS)) {
+          const pontosArea = [];
+
+          for (let i = 0; i < perguntas.length; i++) {
+            const name = `${areaNome}__${i}`;
+            const checked = document.querySelector(
+              `input[name="${CSS.escape(name)}"]:checked`
+            );
+
+            if (!checked) {
+              errorEl.textContent =
+                "Responda todas as perguntas de todas as áreas antes de enviar.";
+              return;
+            }
+
+            pontosArea.push(Number(checked.value));
+          }
+
+          payload[areaNome] = pontosArea;
+        }
+
+        btnEnviar.disabled = true;
+        btnEnviar.textContent = "Enviando...";
+
+        try {
+          const resp = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!resp.ok) {
+            const detail = await resp.text();
+            throw new Error(
+              `Erro ao chamar API (${resp.status}): ${
+                detail || "sem detalhes"
+              }`
+            );
+          }
+
+          const data = await resp.json();
+          // data = { "Marketing": { total_pontos, pontuacao_maxima, percentual, mensagem }, ... }
+
+          // render resultados
+          Object.entries(data).forEach(([area, res]) => {
+            const card = document.createElement("div");
+            card.className = "result-card";
+
+            const h3 = document.createElement("h3");
+            h3.textContent = area;
+            card.appendChild(h3);
+
+            const pScore = document.createElement("p");
+            pScore.className = "result-score";
+            pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
+            card.appendChild(pScore);
+
+            const pMsg = document.createElement("p");
+            pMsg.className = "result-message";
+            pMsg.textContent = res.mensagem;
+            card.appendChild(pMsg);
+
+            resultGrid.appendChild(card);
+          });
+
+          resultadosSection.style.display = "block";
+        } catch (err) {
+          console.error(err);
+          errorEl.textContent = err.message || "Erro ao enviar diagnóstico.";
+        } finally {
+          btnEnviar.disabled = false;
+          btnEnviar.textContent = "Enviar diagnóstico";
+        }
+      });
+    </script>
+  </body>
+</html>
