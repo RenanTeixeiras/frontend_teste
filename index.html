@@ -164,6 +164,13 @@
     </div>
 
     <script>
+
+      function classificarPercentual(percentual) {
+        if (percentual >= 80) return "Alto desempenho";
+        if (percentual >= 60) return "Ajuste necessário";
+        return "Intervenção crítica";
+      }
+
       const API_URL = "https://ce-infinity.onrender.com/api/diagnostico"; 
 
       const AREAS = {
@@ -331,7 +338,17 @@
           const data = await resp.json();
           // data = { "Marketing": { total_pontos, pontuacao_maxima, percentual, mensagem }, ... }
 
-          // render resultados
+          // ------------ cálculo por setor + global ------------
+          let somaPercentuais = 0;
+          let numAreas = 0;
+          const setoresAlto = [];
+          const setoresAjuste = [];
+          const setoresCritico = [];
+
+          // limpa grid de resultados
+          resultGrid.innerHTML = "";
+
+          // render resultados por área
           Object.entries(data).forEach(([area, res]) => {
             const card = document.createElement("div");
             card.className = "result-card";
@@ -345,14 +362,76 @@
             pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
             card.appendChild(pScore);
 
+            const classificacao = classificarPercentual(res.percentual);
+
+            const pClass = document.createElement("p");
+            pClass.className = "result-score";
+            pClass.textContent = `Classificação: ${classificacao}`;
+            card.appendChild(pClass);
+
             const pMsg = document.createElement("p");
             pMsg.className = "result-message";
             pMsg.textContent = res.mensagem;
             card.appendChild(pMsg);
 
             resultGrid.appendChild(card);
+
+            // acumula para parecer global
+            somaPercentuais += res.percentual;
+            numAreas += 1;
+
+            if (classificacao === "Alto desempenho") {
+              setoresAlto.push(area);
+            } else if (classificacao === "Ajuste necessário") {
+              setoresAjuste.push(area);
+            } else {
+              setoresCritico.push(area);
+            }
           });
 
+          // ------------ parecer global ------------
+          const mediaGlobal =
+            numAreas > 0 ? Number((somaPercentuais / numAreas).toFixed(1)) : 0;
+          const classificacaoGlobal = classificarPercentual(mediaGlobal);
+
+          // remove parecer global anterior (se o usuário refizer o diagnóstico)
+          const parecerAntigo = document.getElementById("parecer-global");
+          if (parecerAntigo) {
+            parecerAntigo.remove();
+          }
+
+          const parecerDiv = document.createElement("div");
+          parecerDiv.id = "parecer-global";
+          parecerDiv.style.marginTop = "1rem";
+          parecerDiv.style.paddingTop = "1rem";
+          parecerDiv.style.borderTop = "1px solid #e5e7eb";
+
+          const hGlobal = document.createElement("h3");
+          hGlobal.textContent = "Parecer global";
+          parecerDiv.appendChild(hGlobal);
+
+          const pMedia = document.createElement("p");
+          pMedia.textContent = `Desempenho médio global: ${mediaGlobal}% (${classificacaoGlobal})`;
+          parecerDiv.appendChild(pMedia);
+
+          const pSetores = document.createElement("p");
+          pSetores.innerHTML = `
+            <strong>Setores de alto desempenho:</strong> ${
+              setoresAlto.length ? setoresAlto.join(", ") : "Nenhum."
+            }<br />
+            <strong>Setores em ajuste:</strong> ${
+              setoresAjuste.length ? setoresAjuste.join(", ") : "Nenhum."
+            }<br />
+            <strong>Setores com intervenção crítica:</strong> ${
+              setoresCritico.length ? setoresCritico.join(", ") : "Nenhum."
+            }
+          `;
+          parecerDiv.appendChild(pSetores);
+
+          // adiciona abaixo do grid de resultados
+          resultadosSection.appendChild(parecerDiv);
+
+          // exibe a seção de resultados
           resultadosSection.style.display = "block";
         } catch (err) {
           console.error(err);
