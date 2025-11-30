@@ -142,6 +142,42 @@
         gap: 0.75rem;
         margin-bottom: 0.75rem;
       }
+
+      /* ===== Estilos para impressão (PDF via imprimir) ===== */
+      @media print {
+        body {
+          background: white;
+        }
+
+        header,
+        #diagnostico-form,
+        .actions {
+          display: none !important;
+        }
+
+        #resultados {
+          display: block !important;
+          box-shadow: none;
+          border-radius: 0;
+          margin: 0;
+          padding: 0.5cm;
+        }
+
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        #btn-pdf {
+          display: none !important;
+        }
+      }
+
+      @page {
+        size: A4;
+        margin: 10mm;
+      }
     </style>
   </head>
   <body>
@@ -183,9 +219,6 @@
       </section>
     </div>
 
-    <!-- carrega a lib html2pdf ANTES do script principal -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
     <script>
       function classificarPercentual(percentual) {
         if (percentual >= 80) return "Alto desempenho";
@@ -201,7 +234,7 @@
           "Existe uma estratégia de marketing digital ativa (redes sociais, anúncios, e-mail etc.)?",
           "O atendimento e o pós-venda seguem um padrão de qualidade definido?",
           "A taxa de conversão de clientes é monitorada e analisada regularmente?",
-          "A fidelização e recompra dos clientes fazem parte da estratégia comercial?",
+          "A fidelização e recompras dos clientes fazem parte da estratégia comercial?",
         ],
         Operações: [
           "A empresa possui processos operacionais formalizados e padronizados?",
@@ -277,7 +310,7 @@
 
             const input = document.createElement("input");
             input.type = "radio";
-            input.name = `${areaNome}__${index}`; // nome por pergunta
+            input.name = `${areaNome}__${index}`;
             input.value = String(opt.value);
 
             const spanText = document.createElement("span");
@@ -317,7 +350,6 @@
 
         const payload = {};
 
-        // montar payload por área
         for (const [areaNome, perguntas] of Object.entries(AREAS)) {
           const pontosArea = [];
 
@@ -359,7 +391,6 @@
           }
 
           const data = await resp.json();
-          // data = { "Marketing": { total_pontos, pontuacao_maxima, percentual, mensagem }, ... }
 
           let somaPercentuais = 0;
           let numAreas = 0;
@@ -448,7 +479,6 @@
           resultadosSection.appendChild(parecerDiv);
           resultadosSection.style.display = "block";
 
-          // mostra o botão de PDF agora que há resultado
           btnPdf.style.display = "inline-block";
         } catch (err) {
           console.error(err);
@@ -459,22 +489,9 @@
         }
       });
 
-      // === BOTÃO PDF (único listener, fora do try) ===
+      // Botão "Baixar PDF" abre o diálogo de impressão
       btnPdf.addEventListener("click", () => {
-        const element = document.getElementById("resultados");
-
-        // debug opcional: ver o HTML que será convertido
-        console.log("HTML enviado para o PDF:", element.innerHTML);
-
-        const options = {
-          margin: 10, // mm
-          filename: "diagnostico-ce-infinity.pdf",
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        };
-
-        html2pdf().set(options).from(element).save();
+        window.print();
       });
     </script>
   </body>
