@@ -1,9 +1,16 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
+
     <meta charset="UTF-8" />
     <title>Diagnóstico Empresarial CE Infinity</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        integrity="sha512-YcsIP0rj0qVZfGk8O5R16vuMJnqd7qV3CyMfCVxYvBy06SnVAk0nnk3uKxR271Wq5M19wXHltnZQw8M9QqfKkg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
     <style>
       body {
         margin: 0;
@@ -133,6 +140,16 @@
       .result-message {
         font-size: 0.9rem;
       }
+
+
+      .resultados-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
     </style>
   </head>
   <body>
@@ -158,8 +175,14 @@
       <div id="error" class="error"></div>
 
       <section id="resultados" class="resultados" style="display: none">
+         <div class="resultados-header">
         <h2>Resultados por área</h2>
-        <div id="result-grid" class="result-grid"></div>
+        <button type="button" id="btn-pdf" class="primary" style="display: none;">
+          Baixar PDF
+        </button>
+      </div>
+
+      <div id="result-grid" class="result-grid"></div>
       </section>
     </div>
 
@@ -433,6 +456,25 @@
 
           // exibe a seção de resultados
           resultadosSection.style.display = "block";
+
+          btnPdf.addEventListener("click", () => {
+          // elemento que queremos transformar em PDF
+          const element = document.getElementById("resultados");
+
+          const options = {
+            margin:       10, // em mm
+            filename:     "diagnostico-ce-infinity.pdf",
+            image:        { type: "jpeg", quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: "mm", format: "a4", orientation: "portrait" },
+          };
+
+          html2pdf().set(options).from(element).save();
+        });
+
+
+          // mostra o botão de PDF agora que há resultado
+          btnPdf.style.display = "inline-block";
         } catch (err) {
           console.error(err);
           errorEl.textContent = err.message || "Erro ao enviar diagnóstico.";
@@ -441,6 +483,8 @@
           btnEnviar.textContent = "Enviar diagnóstico";
         }
       });
+      const btnPdf = document.getElementById("btn-pdf");
+
     </script>
   </body>
 </html>
