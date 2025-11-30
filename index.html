@@ -178,26 +178,34 @@
       <div id="error" class="error"></div>
 
       <section id="resultados" class="resultados" style="display: none">
-         <div class="resultados-header">
-        <h2>Resultados por área</h2>
-        <button type="button" id="btn-pdf" class="primary" style="display: none;">
-          Baixar PDF
-        </button>
-      </div>
+              <section id="resultados" class="resultados" style="display: none">
+        <div class="resultados-header">
+          <h2>Resultados por área</h2>
+          <button
+            type="button"
+            id="btn-pdf"
+            class="primary"
+            style="display: none"
+          >
+            Baixar PDF
+          </button>
+        </div>
 
-      <div id="result-grid" class="result-grid"></div>
+        <div id="result-grid" class="result-grid"></div>
       </section>
     </div>
 
-    <script>
+    <!-- carrega a lib html2pdf ANTES do script principal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <script>
       function classificarPercentual(percentual) {
         if (percentual >= 80) return "Alto desempenho";
         if (percentual >= 60) return "Ajuste necessário";
         return "Intervenção crítica";
       }
 
-      const API_URL = "https://ce-infinity.onrender.com/api/diagnostico"; 
+      const API_URL = "https://ce-infinity.onrender.com/api/diagnostico";
 
       const AREAS = {
         Marketing: [
@@ -250,7 +258,6 @@
         { label: "Não sei", value: 0, description: "0 pontos" },
       ];
 
-      // === GERAR FORMULÁRIO ===
       const formEl = document.getElementById("diagnostico-form");
 
       Object.entries(AREAS).forEach(([areaNome, perguntas]) => {
@@ -281,7 +288,7 @@
 
             const input = document.createElement("input");
             input.type = "radio";
-            input.name = `${areaNome}__${index}`; // nome por pergunta
+            input.name = `${areaNome}__${index}`;
             input.value = String(opt.value);
 
             const spanText = document.createElement("span");
@@ -307,21 +314,19 @@
         formEl.appendChild(areaCard);
       });
 
-      // === ENVIO DO FORMULÁRIO ===
       const btnEnviar = document.getElementById("btn-enviar");
       const errorEl = document.getElementById("error");
       const resultadosSection = document.getElementById("resultados");
       const resultGrid = document.getElementById("result-grid");
       const btnPdf = document.getElementById("btn-pdf");
 
-        btnEnviar.addEventListener("click", async () => {
+      btnEnviar.addEventListener("click", async () => {
         errorEl.textContent = "";
         resultadosSection.style.display = "none";
         resultGrid.innerHTML = "";
 
         const payload = {};
 
-        // montar payload por área
         for (const [areaNome, perguntas] of Object.entries(AREAS)) {
           const pontosArea = [];
 
@@ -363,19 +368,15 @@
           }
 
           const data = await resp.json();
-          // data = { "Marketing": { total_pontos, pontuacao_maxima, percentual, mensagem }, ... }
 
-          // ------------ cálculo por setor + global ------------
           let somaPercentuais = 0;
           let numAreas = 0;
           const setoresAlto = [];
           const setoresAjuste = [];
           const setoresCritico = [];
 
-          // limpa grid de resultados
           resultGrid.innerHTML = "";
 
-          // render resultados por área
           Object.entries(data).forEach(([area, res]) => {
             const card = document.createElement("div");
             card.className = "result-card";
@@ -403,7 +404,6 @@
 
             resultGrid.appendChild(card);
 
-            // acumula para parecer global
             somaPercentuais += res.percentual;
             numAreas += 1;
 
@@ -416,12 +416,10 @@
             }
           });
 
-          // ------------ parecer global ------------
           const mediaGlobal =
             numAreas > 0 ? Number((somaPercentuais / numAreas).toFixed(1)) : 0;
           const classificacaoGlobal = classificarPercentual(mediaGlobal);
 
-          // remove parecer global anterior (se o usuário refizer o diagnóstico)
           const parecerAntigo = document.getElementById("parecer-global");
           if (parecerAntigo) {
             parecerAntigo.remove();
@@ -455,29 +453,9 @@
           `;
           parecerDiv.appendChild(pSetores);
 
-          // adiciona abaixo do grid de resultados
           resultadosSection.appendChild(parecerDiv);
-
-          // exibe a seção de resultados
           resultadosSection.style.display = "block";
 
-          btnPdf.addEventListener("click", () => {
-          // elemento que queremos transformar em PDF
-          const element = document.getElementById("resultados");
-
-          const options = {
-            margin:       10, // em mm
-            filename:     "diagnostico-ce-infinity.pdf",
-            image:        { type: "jpeg", quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: "mm", format: "a4", orientation: "portrait" },
-          };
-
-          html2pdf().set(options).from(element).save();
-        });
-
-
-          // mostra o botão de PDF agora que há resultado
           btnPdf.style.display = "inline-block";
         } catch (err) {
           console.error(err);
@@ -488,6 +466,20 @@
         }
       });
 
+      // listener do botão de PDF FORA do try/catch
+      btnPdf.addEventListener("click", () => {
+        const element = document.getElementById("resultados");
+
+        const options = {
+          margin: 10,
+          filename: "diagnostico-ce-infinity.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        };
+
+        html2pdf().set(options).from(element).save();
+      });
     </script>
   </body>
 </html>
