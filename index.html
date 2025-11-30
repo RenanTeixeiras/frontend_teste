@@ -309,8 +309,9 @@
       const errorEl = document.getElementById("error");
       const resultadosSection = document.getElementById("resultados");
       const resultGrid = document.getElementById("result-grid");
+      const btnPdf = document.getElementById("btn-pdf");
 
-      btnEnviar.addEventListener("click", async () => {
+        btnEnviar.addEventListener("click", async () => {
         errorEl.textContent = "";
         resultadosSection.style.display = "none";
         resultGrid.innerHTML = "";
@@ -483,7 +484,6 @@
           btnEnviar.textContent = "Enviar diagnóstico";
         }
       });
-      const btnPdf = document.getElementById("btn-pdf");
 
     </script>
   </body>
