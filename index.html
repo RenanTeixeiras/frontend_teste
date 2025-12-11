@@ -387,11 +387,11 @@
         { label: "Não sei", value: 0, description: "0 pontos" },
       ];
 
-      // Para viabilidade: SIM = 4, NÃO SEI = 2, NÃO = 0
+      // Para viabilidade: AGORA TAMBÉM 2, 1, 0 (igual diagnóstico)
       const ANSWER_OPTIONS_VIABILIDADE = [
-        { label: "Sim", value: 4, description: "4 pontos" },
-        { label: "Não sei", value: 2, description: "2 pontos" },
-        { label: "Não", value: 0, description: "0 pontos" },
+        { label: "Sim", value: 2, description: "2 pontos" },
+        { label: "Não", value: 1, description: "1 ponto" },
+        { label: "Não sei", value: 0, description: "0 pontos" },
       ];
 
       const formEl = document.getElementById("diagnostico-form");
@@ -696,7 +696,7 @@
             hMain.textContent = "Maturidade da ideia";
             cardPrincipal.appendChild(hMain);
 
-            // Aqui você pode decidir se mostra ou não o percentual
+            // Aqui você pode decidir se mostra ou não o percentual ao cliente
             const pResumo = document.createElement("p");
             pResumo.className = "result-score";
             pResumo.textContent = `Pontuação total: ${data.total_pontos} / ${data.pontuacao_maxima}`;
