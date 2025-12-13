@@ -241,11 +241,7 @@
           >
             Diagnóstico Empresarial
           </button>
-          <button
-            type="button"
-            class="selector-btn"
-            data-form="viabilidade"
-          >
+          <button type="button" class="selector-btn" data-form="viabilidade">
             Viabilidade de Novas Ideias
           </button>
         </div>
@@ -265,7 +261,7 @@
 
       <section id="resultados" class="resultados" style="display: none">
         <div class="resultados-header">
-          <h2 id="resultados-title">Resultados por área</h2>
+          <h2 id="resultados-title">Resultados</h2>
           <button
             type="button"
             id="btn-pdf"
@@ -292,10 +288,8 @@
       const API_VIABILIDADE_URL =
         "https://ce-infinity.onrender.com/api/viabilidade";
 
-      // Estado atual: qual formulário está ativo?
       let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
 
-      // ÁREAS DO DIAGNÓSTICO EMPRESARIAL
       const AREAS_DIAGNOSTICO = {
         Marketing: [
           "Sua empresa tem metas de vendas mensais e acompanha os resultados?",
@@ -341,7 +335,6 @@
         ],
       };
 
-      // ÁREAS DA VIABILIDADE DE NOVAS IDEIAS
       const AREAS_VIABILIDADE = {
         "Problema e oportunidade": [
           "Você consegue explicar claramente qual problema seu negócio pretende resolver?",
@@ -380,14 +373,13 @@
         ],
       };
 
-      // Opções de resposta para cada tipo de formulário
       const ANSWER_OPTIONS_DIAGNOSTICO = [
         { label: "Sim", value: 2, description: "2 pontos" },
         { label: "Não", value: 1, description: "1 ponto" },
         { label: "Não sei", value: 0, description: "0 pontos" },
       ];
 
-      // Para viabilidade: AGORA TAMBÉM 2, 1, 0 (igual diagnóstico)
+      // Viabilidade agora também usa 2 / 1 / 0
       const ANSWER_OPTIONS_VIABILIDADE = [
         { label: "Sim", value: 2, description: "2 pontos" },
         { label: "Não", value: 1, description: "1 ponto" },
@@ -403,7 +395,6 @@
       const pageTitle = document.getElementById("page-title");
       const pageSubtitle = document.getElementById("page-subtitle");
       const resultadosTitle = document.getElementById("resultados-title");
-
       const selectorButtons = document.querySelectorAll(".selector-btn");
 
       function getCurrentAreas() {
@@ -424,11 +415,13 @@
           pageSubtitle.textContent =
             "Responda às perguntas de cada área para receber os feedbacks personalizados.";
           resultadosTitle.textContent = "Resultados por área";
+          btnEnviar.textContent = "Enviar diagnóstico";
         } else {
           pageTitle.textContent = "Viabilidade de Novas Ideias CE Infinity";
           pageSubtitle.textContent =
             "Avalie o nível de maturidade da sua ideia de negócio respondendo às perguntas abaixo.";
-          resultadosTitle.textContent = "Resultado da maturidade da ideia";
+          resultadosTitle.textContent = "Resultado";
+          btnEnviar.textContent = "Enviar viabilidade";
         }
       }
 
@@ -499,10 +492,9 @@
         updateHeaderTexts();
       }
 
-      // Inicializa com o diagnóstico empresarial
+      // inicial
       renderForm();
 
-      // Troca de formulário (diagnóstico x viabilidade)
       selectorButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
           const formType = btn.getAttribute("data-form");
@@ -517,7 +509,6 @@
         });
       });
 
-      // === ENVIO DO FORMULÁRIO ===
       btnEnviar.addEventListener("click", async () => {
         errorEl.textContent = "";
         resultadosSection.style.display = "none";
@@ -526,7 +517,6 @@
         const AREAS_ATUAL = getCurrentAreas();
         const respostasPorArea = {};
 
-        // Monta as respostas por área
         for (const [areaNome, perguntas] of Object.entries(AREAS_ATUAL)) {
           const pontosArea = [];
 
@@ -553,7 +543,7 @@
 
         try {
           if (currentFormType === "diagnostico") {
-            // --- Diagnóstico Empresarial (API /diagnostico) ---
+            // === DIAGNÓSTICO EMPRESARIAL ===
             const resp = await fetch(API_DIAGNOSTICO_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -570,12 +560,6 @@
             }
 
             const data = await resp.json();
-
-            let somaPercentuais = 0;
-            let numAreas = 0;
-            const setoresAlto = [];
-            const setoresAjuste = [];
-            const setoresCritico = [];
 
             resultGrid.innerHTML = "";
 
@@ -605,62 +589,11 @@
               card.appendChild(pMsg);
 
               resultGrid.appendChild(card);
-
-              somaPercentuais += res.percentual;
-              numAreas += 1;
-
-              if (classificacao === "Alto desempenho") {
-                setoresAlto.push(area);
-              } else if (classificacao === "Ajuste necessário") {
-                setoresAjuste.push(area);
-              } else {
-                setoresCritico.push(area);
-              }
             });
 
-            const mediaGlobal =
-              numAreas > 0
-                ? Number((somaPercentuais / numAreas).toFixed(1))
-                : 0;
-            const classificacaoGlobal = classificarPercentual(mediaGlobal);
-
-            const parecerAntigo = document.getElementById("parecer-global");
-            if (parecerAntigo) {
-              parecerAntigo.remove();
-            }
-
-            const parecerDiv = document.createElement("div");
-            parecerDiv.id = "parecer-global";
-            parecerDiv.style.marginTop = "1rem";
-            parecerDiv.style.paddingTop = "1rem";
-            parecerDiv.style.borderTop = "1px solid #e5e7eb";
-
-            const hGlobal = document.createElement("h3");
-            hGlobal.textContent = "Parecer global";
-            parecerDiv.appendChild(hGlobal);
-
-            const pMedia = document.createElement("p");
-            pMedia.textContent = `Desempenho médio global: ${mediaGlobal}% (${classificacaoGlobal})`;
-            parecerDiv.appendChild(pMedia);
-
-            const pSetores = document.createElement("p");
-            pSetores.innerHTML = `
-              <strong>Setores de alto desempenho:</strong> ${
-                setoresAlto.length ? setoresAlto.join(", ") : "Nenhum."
-              }<br />
-              <strong>Setores em ajuste:</strong> ${
-                setoresAjuste.length ? setoresAjuste.join(", ") : "Nenhum."
-              }<br />
-              <strong>Setores com intervenção crítica:</strong> ${
-                setoresCritico.length ? setoresCritico.join(", ") : "Nenhum."
-              }
-            `;
-            parecerDiv.appendChild(pSetores);
-
-            resultadosSection.appendChild(parecerDiv);
             resultadosSection.style.display = "block";
           } else {
-            // --- Viabilidade de Novas Ideias (API /viabilidade) ---
+            // === VIABILIDADE DE NOVAS IDEIAS ===
             const resp = await fetch(API_VIABILIDADE_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -677,18 +610,10 @@
             }
 
             const data = await resp.json();
-            // Esperado:
-            // {
-            //   total_pontos,
-            //   pontuacao_maxima,
-            //   percentual_maturidade,
-            //   mensagem,
-            //   areas: { "Área": { total_pontos, pontuacao_maxima, percentual } }
-            // }
 
             resultGrid.innerHTML = "";
 
-            // Card principal: maturidade da ideia
+            // Card principal: mensagem global da API (sem "parecer global" no front)
             const cardPrincipal = document.createElement("div");
             cardPrincipal.className = "result-card";
 
@@ -696,7 +621,6 @@
             hMain.textContent = "Maturidade da ideia";
             cardPrincipal.appendChild(hMain);
 
-            // Aqui você pode decidir se mostra ou não o percentual ao cliente
             const pResumo = document.createElement("p");
             pResumo.className = "result-score";
             pResumo.textContent = `Pontuação total: ${data.total_pontos} / ${data.pontuacao_maxima}`;
@@ -709,7 +633,7 @@
 
             resultGrid.appendChild(cardPrincipal);
 
-            // Cards por área (resumo)
+            // Cards por área (somente resumo)
             if (data.areas) {
               Object.entries(data.areas).forEach(([area, resumo]) => {
                 const card = document.createElement("div");
@@ -740,14 +664,13 @@
           btnPdf.style.display = "inline-block";
         } catch (err) {
           console.error(err);
-          errorEl.textContent = err.message || "Erro ao enviar diagnóstico.";
+          errorEl.textContent = err.message || "Erro ao enviar.";
         } finally {
           btnEnviar.disabled = false;
-          btnEnviar.textContent = "Enviar diagnóstico";
+          updateHeaderTexts(); // restaura texto do botão conforme tipo
         }
       });
 
-      // Botão "Baixar PDF" abre o diálogo de impressão
       btnPdf.addEventListener("click", () => {
         window.print();
       });
