@@ -351,7 +351,10 @@ btnEnviar.addEventListener("click", async () => {
         const classificacao = pg?.classificacao || "Parecer global";
         const minP = pg?.min_percentual ?? "";
         const maxP = pg?.max_percentual ?? "";
-        const msg = pg?.mensagem || data.mensagem || "";
+        const rawMsg = pg?.mensagem || data.mensagem || "";
+
+        // remove a parte "Soluções CE Infinity recomendadas..." da mensagem (para não duplicar)
+        const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
         const solucoes = Array.isArray(pg?.solucoes) ? pg.solucoes : [];
 
         viabilidadeParecerEl.innerHTML = `
