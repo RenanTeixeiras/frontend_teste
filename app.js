@@ -4,6 +4,15 @@ function classificarPercentual(percentual) {
   return "Intervenção crítica";
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 const API_DIAGNOSTICO_URL = "https://ce-infinity.onrender.com/api/diagnostico";
 const API_VIABILIDADE_URL = "https://ce-infinity.onrender.com/api/viabilidade";
 
@@ -98,7 +107,7 @@ const ANSWER_OPTIONS_DIAGNOSTICO = [
   { label: "Não sei", value: 0, description: "0 pontos" },
 ];
 
-// Viabilidade também usa 2 / 1 / 0
+// Viabilidade agora também usa 2/1/0 (igual ao diagnóstico)
 const ANSWER_OPTIONS_VIABILIDADE = [
   { label: "Sim", value: 2, description: "2 pontos" },
   { label: "Não", value: 1, description: "1 ponto" },
@@ -111,15 +120,16 @@ const errorEl = document.getElementById("error");
 const resultadosSection = document.getElementById("resultados");
 const resultGrid = document.getElementById("result-grid");
 const btnPdf = document.getElementById("btn-pdf");
+
 const pageTitle = document.getElementById("page-title");
 const pageSubtitle = document.getElementById("page-subtitle");
 const resultadosTitle = document.getElementById("resultados-title");
+
 const selectorButtons = document.querySelectorAll(".selector-btn");
+const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
 
 function getCurrentAreas() {
-  return currentFormType === "diagnostico"
-    ? AREAS_DIAGNOSTICO
-    : AREAS_VIABILIDADE;
+  return currentFormType === "diagnostico" ? AREAS_DIAGNOSTICO : AREAS_VIABILIDADE;
 }
 
 function getCurrentAnswerOptions() {
@@ -144,12 +154,21 @@ function updateHeaderTexts() {
   }
 }
 
-function renderForm() {
-  formEl.innerHTML = "";
-  errorEl.textContent = "";
+function resetResultados() {
   resultadosSection.style.display = "none";
   resultGrid.innerHTML = "";
   btnPdf.style.display = "none";
+
+  if (viabilidadeParecerEl) {
+    viabilidadeParecerEl.style.display = "none";
+    viabilidadeParecerEl.innerHTML = "";
+  }
+}
+
+function renderForm() {
+  formEl.innerHTML = "";
+  errorEl.textContent = "";
+  resetResultados();
 
   const AREAS_ATUAL = getCurrentAreas();
   const answerOptions = getCurrentAnswerOptions();
@@ -230,8 +249,7 @@ selectorButtons.forEach((btn) => {
 
 btnEnviar.addEventListener("click", async () => {
   errorEl.textContent = "";
-  resultadosSection.style.display = "none";
-  resultGrid.innerHTML = "";
+  resetResultados();
 
   const AREAS_ATUAL = getCurrentAreas();
   const respostasPorArea = {};
@@ -307,7 +325,9 @@ btnEnviar.addEventListener("click", async () => {
       });
 
       resultadosSection.style.display = "block";
+      btnPdf.style.display = "inline-block";
     } else {
+      // ===== Viabilidade (agora com parecer_global) =====
       const resp = await fetch(API_VIABILIDADE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -324,27 +344,43 @@ btnEnviar.addEventListener("click", async () => {
       const data = await resp.json();
       resultGrid.innerHTML = "";
 
-      // card principal (mensagem global vem da API)
-      const cardPrincipal = document.createElement("div");
-      cardPrincipal.className = "result-card";
+      // ----- Render parecer_global -----
+      if (viabilidadeParecerEl) {
+        const pg = data.parecer_global;
 
-      const hMain = document.createElement("h3");
-      hMain.textContent = "Maturidade da ideia";
-      cardPrincipal.appendChild(hMain);
+        const classificacao = pg?.classificacao || "Parecer global";
+        const minP = pg?.min_percentual ?? "";
+        const maxP = pg?.max_percentual ?? "";
+        const msg = pg?.mensagem || data.mensagem || "";
+        const solucoes = Array.isArray(pg?.solucoes) ? pg.solucoes : [];
 
-      const pResumo = document.createElement("p");
-      pResumo.className = "result-score";
-      pResumo.textContent = `Pontuação total: ${data.total_pontos} / ${data.pontuacao_maxima}`;
-      cardPrincipal.appendChild(pResumo);
+        viabilidadeParecerEl.innerHTML = `
+          <div class="parecer-top">
+            <h3 class="parecer-title">Parecer global — ${escapeHtml(classificacao)}</h3>
+            <div class="parecer-range">
+              Faixa: ${minP}${minP !== "" ? "%" : ""} a ${maxP}${maxP !== "" ? "%" : ""}%
+              • Maturidade: ${escapeHtml(data.percentual_maturidade)}%
+            </div>
+          </div>
 
-      const pMsgGlobal = document.createElement("p");
-      pMsgGlobal.className = "result-message";
-      pMsgGlobal.textContent = data.mensagem;
-      cardPrincipal.appendChild(pMsgGlobal);
+          <p class="parecer-msg">${escapeHtml(msg)}</p>
 
-      resultGrid.appendChild(cardPrincipal);
+          ${
+            solucoes.length
+              ? `
+                <div class="parecer-solucoes-title"><strong>Soluções CE Infinity recomendadas</strong></div>
+                <ul class="parecer-solucoes">
+                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+                </ul>
+              `
+              : ""
+          }
+        `;
 
-      // cards por área
+        viabilidadeParecerEl.style.display = "block";
+      }
+
+      // ----- Cards por área -----
       if (data.areas) {
         Object.entries(data.areas).forEach(([area, resumo]) => {
           const card = document.createElement("div");
@@ -359,10 +395,10 @@ btnEnviar.addEventListener("click", async () => {
           pScore.textContent = `Pontuação: ${resumo.total_pontos} / ${resumo.pontuacao_maxima} (${resumo.percentual}%)`;
           card.appendChild(pScore);
 
-          const classificacao = classificarPercentual(resumo.percentual);
+          const classificacaoArea = classificarPercentual(resumo.percentual);
           const pClass = document.createElement("p");
           pClass.className = "result-score";
-          pClass.textContent = `Classificação: ${classificacao}`;
+          pClass.textContent = `Classificação: ${classificacaoArea}`;
           card.appendChild(pClass);
 
           resultGrid.appendChild(card);
@@ -370,9 +406,8 @@ btnEnviar.addEventListener("click", async () => {
       }
 
       resultadosSection.style.display = "block";
+      btnPdf.style.display = "inline-block";
     }
-
-    btnPdf.style.display = "inline-block";
   } catch (err) {
     console.error(err);
     errorEl.textContent = err.message || "Erro ao enviar.";
@@ -382,6 +417,7 @@ btnEnviar.addEventListener("click", async () => {
   }
 });
 
+// PDF via print
 btnPdf.addEventListener("click", () => {
   window.print();
 });

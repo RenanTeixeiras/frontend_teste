@@ -20,6 +20,7 @@ p.subtitle {
   color: #4b5563;
 }
 
+/* ===== seletor de formulário ===== */
 .form-selector {
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
@@ -58,6 +59,7 @@ p.subtitle {
   border-color: #1d4ed8;
 }
 
+/* ===== cards/form ===== */
 .area-card {
   background: white;
   border-radius: 0.75rem;
@@ -129,6 +131,7 @@ button.primary:disabled {
   color: #b91c1c;
 }
 
+/* ===== resultados ===== */
 .resultados {
   background: white;
   border-radius: 0.75rem;
@@ -138,6 +141,14 @@ button.primary:disabled {
 }
 
 .resultados h2 {
+  margin-bottom: 0.75rem;
+}
+
+.resultados-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
@@ -164,15 +175,53 @@ button.primary:disabled {
   font-size: 0.9rem;
 }
 
-.resultados-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
+/* ===== NOVO: Parecer global (Viabilidade) ===== */
+.parecer-card {
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e5e7eb;
   margin-bottom: 0.75rem;
 }
 
-/* ===== impressão (PDF via imprimir) ===== */
+.parecer-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.parecer-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.parecer-range {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.parecer-msg {
+  margin: 0.5rem 0 0.75rem;
+  white-space: pre-line; /* respeita \n da mensagem da API */
+  font-size: 0.95rem;
+}
+
+.parecer-solucoes-title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.parecer-solucoes {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #111827;
+}
+
+/* ===== impressão / PDF ===== */
 @media print {
   body {
     background: white;

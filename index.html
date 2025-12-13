@@ -12,7 +12,8 @@
       <header>
         <h1 id="page-title">Diagnóstico Empresarial CE Infinity</h1>
         <p class="subtitle" id="page-subtitle">
-          Responda às perguntas de cada área para receber os feedbacks personalizados.
+          Responda às perguntas de cada área para receber os feedbacks
+          personalizados.
         </p>
       </header>
 
@@ -20,14 +21,12 @@
         <span class="form-selector-label">
           Qual diagnóstico você deseja realizar?
         </span>
+
         <div class="form-selector-buttons">
-          <button
-            type="button"
-            class="selector-btn active"
-            data-form="diagnostico"
-          >
+          <button type="button" class="selector-btn active" data-form="diagnostico">
             Diagnóstico Empresarial
           </button>
+
           <button type="button" class="selector-btn" data-form="viabilidade">
             Viabilidade de Novas Ideias
           </button>
@@ -46,11 +45,14 @@
 
       <section id="resultados" class="resultados" style="display: none">
         <div class="resultados-header">
-          <h2 id="resultados-title">Resultados</h2>
+          <h2 id="resultados-title">Resultados por área</h2>
           <button type="button" id="btn-pdf" class="primary" style="display: none">
             Baixar PDF
           </button>
         </div>
+
+        <!-- NOVO: Parecer global (Viabilidade) -->
+        <div id="viabilidade-parecer" class="parecer-card" style="display: none"></div>
 
         <div id="result-grid" class="result-grid"></div>
       </section>
