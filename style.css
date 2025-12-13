@@ -1,0 +1,210 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+p.subtitle {
+  color: #4b5563;
+}
+
+.form-selector {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.form-selector-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.form-selector-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selector-btn {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #9ca3af;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.selector-btn.active {
+  background: #2563eb;
+  color: white;
+  border-color: #1d4ed8;
+}
+
+.area-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 10px 15px -10px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1rem;
+}
+
+.area-card h2 {
+  margin-bottom: 0.75rem;
+}
+
+.question-list {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.question-item {
+  margin-bottom: 1rem;
+}
+
+.answer-group {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.answer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.answer-pill input {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin: 1.5rem 0;
+}
+
+button.primary {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+button.primary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.error {
+  margin-top: 0.75rem;
+  color: #b91c1c;
+}
+
+.resultados {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 10px 15px -10px rgba(0, 0, 0, 0.15);
+  margin-bottom: 2rem;
+}
+
+.resultados h2 {
+  margin-bottom: 0.75rem;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.result-card {
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #e5e7eb;
+}
+
+.result-score {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-bottom: 0.4rem;
+}
+
+.result-message {
+  font-size: 0.9rem;
+}
+
+.resultados-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ===== impressão (PDF via imprimir) ===== */
+@media print {
+  body {
+    background: white;
+  }
+
+  header,
+  #diagnostico-form,
+  .actions,
+  .form-selector {
+    display: none !important;
+  }
+
+  #resultados {
+    display: block !important;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 0.5cm;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  #btn-pdf {
+    display: none !important;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
