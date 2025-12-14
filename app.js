@@ -16,7 +16,7 @@ function escapeHtml(str) {
 const API_DIAGNOSTICO_URL = "https://ce-infinity.onrender.com/api/diagnostico";
 const API_VIABILIDADE_URL = "https://ce-infinity.onrender.com/api/viabilidade";
 
-let currentFormType = "diagnostico";
+let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
 
 const AREAS_DIAGNOSTICO = {
   Marketing: [
@@ -107,6 +107,7 @@ const ANSWER_OPTIONS = [
   { label: "Não sei", value: 0 },
 ];
 
+// ===== elementos do DOM =====
 const formEl = document.getElementById("diagnostico-form");
 const btnEnviar = document.getElementById("btn-enviar");
 const errorEl = document.getElementById("error");
@@ -117,19 +118,55 @@ const btnPdf = document.getElementById("btn-pdf");
 const diagnosticoParecerEl = document.getElementById("diagnostico-parecer");
 const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
 
+// (opcional, se existirem no HTML)
+const pageTitle = document.getElementById("page-title");
+const pageSubtitle = document.getElementById("page-subtitle");
+const resultadosTitle = document.getElementById("resultados-title");
+
 function getAreas() {
   return currentFormType === "diagnostico"
     ? AREAS_DIAGNOSTICO
     : AREAS_VIABILIDADE;
 }
 
+function resetResultados() {
+  resultadosSection.style.display = "none";
+  resultGrid.innerHTML = "";
+  btnPdf.style.display = "none";
+
+  if (diagnosticoParecerEl) {
+    diagnosticoParecerEl.style.display = "none";
+    diagnosticoParecerEl.innerHTML = "";
+  }
+
+  if (viabilidadeParecerEl) {
+    viabilidadeParecerEl.style.display = "none";
+    viabilidadeParecerEl.innerHTML = "";
+  }
+}
+
+function updateHeaderTexts() {
+  if (!pageTitle || !pageSubtitle || !resultadosTitle) return;
+
+  if (currentFormType === "diagnostico") {
+    pageTitle.textContent = "Diagnóstico Empresarial CE Infinity";
+    pageSubtitle.textContent =
+      "Responda às perguntas de cada área para receber os feedbacks personalizados.";
+    resultadosTitle.textContent = "Resultados por área";
+    btnEnviar.textContent = "Enviar diagnóstico";
+  } else {
+    pageTitle.textContent = "Viabilidade de Novas Ideias CE Infinity";
+    pageSubtitle.textContent =
+      "Avalie o nível de maturidade da sua ideia de negócio respondendo às perguntas abaixo.";
+    resultadosTitle.textContent = "Resultado";
+    btnEnviar.textContent = "Enviar viabilidade";
+  }
+}
+
 function renderForm() {
   formEl.innerHTML = "";
   errorEl.textContent = "";
-  resultadosSection.style.display = "none";
-  diagnosticoParecerEl.style.display = "none";
-  viabilidadeParecerEl.style.display = "none";
-  resultGrid.innerHTML = "";
+  resetResultados();
 
   Object.entries(getAreas()).forEach(([area, perguntas]) => {
     const card = document.createElement("section");
@@ -160,7 +197,7 @@ function renderForm() {
         const input = document.createElement("input");
         input.type = "radio";
         input.name = `${area}__${i}`;
-        input.value = opt.value;
+        input.value = String(opt.value);
 
         label.appendChild(input);
         label.append(` ${opt.label}`);
@@ -176,28 +213,57 @@ function renderForm() {
   });
 }
 
+/* =========================
+   ✅ SELETOR DE FORMULÁRIO
+   ========================= */
+function setupFormSelector() {
+  const selectorButtons = document.querySelectorAll(".selector-btn");
+  if (!selectorButtons.length) return;
+
+  selectorButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const formType = btn.getAttribute("data-form");
+      if (!formType || formType === currentFormType) return;
+
+      currentFormType = formType;
+
+      selectorButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      updateHeaderTexts();
+      renderForm();
+    });
+  });
+}
+
+// init
+setupFormSelector();
+updateHeaderTexts();
 renderForm();
 
+/* =========================
+   ENVIO
+   ========================= */
 btnEnviar.addEventListener("click", async () => {
   errorEl.textContent = "";
-  resultadosSection.style.display = "none";
-  diagnosticoParecerEl.style.display = "none";
-  viabilidadeParecerEl.style.display = "none";
-  resultGrid.innerHTML = "";
+  resetResultados();
 
   const respostas = {};
+  const areas = getAreas();
 
-  for (const [area, perguntas] of Object.entries(getAreas())) {
+  for (const [area, perguntas] of Object.entries(areas)) {
     respostas[area] = [];
 
     for (let i = 0; i < perguntas.length; i++) {
       const checked = document.querySelector(
         `input[name="${CSS.escape(`${area}__${i}`)}"]:checked`
       );
+
       if (!checked) {
         errorEl.textContent = "Responda todas as perguntas.";
         return;
       }
+
       respostas[area].push(Number(checked.value));
     }
   }
@@ -212,68 +278,151 @@ btnEnviar.addEventListener("click", async () => {
         body: JSON.stringify(respostas),
       });
 
+      if (!r.ok) {
+        const detail = await r.text();
+        throw new Error(`Erro (${r.status}): ${detail || "sem detalhes"}`);
+      }
+
       const data = await r.json();
 
-      // ===== Parecer Global =====
+      // ===== Parecer Global (Diagnóstico) =====
       const fg = data?.global?.feedback_global;
-      if (fg) {
-        const msg = fg.mensagem
+      const percentualGlobal = data?.global?.percentual;
+
+      if (diagnosticoParecerEl && fg) {
+        const msg = String(fg.mensagem || "")
           .split("Soluções Recomendadas")[0]
           .trim();
 
+        const solucoes = Array.isArray(fg.solucoes) ? fg.solucoes : [];
+
         diagnosticoParecerEl.innerHTML = `
-          <h3>Parecer global — ${escapeHtml(fg.titulo)}</h3>
-          <p><strong>Percentual global:</strong> ${data.global.percentual}%</p>
+          <div class="parecer-top">
+            <h3 class="parecer-title">Parecer global — ${escapeHtml(
+              fg.titulo || "Feedback global"
+            )}</h3>
+            <div class="parecer-range">
+              ${
+                typeof percentualGlobal === "number"
+                  ? `Percentual global: ${escapeHtml(percentualGlobal)}%`
+                  : ""
+              }
+            </div>
+          </div>
+
           <p class="parecer-msg">${escapeHtml(msg)}</p>
-          <ul>
-            ${fg.solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-          </ul>
+
+          ${
+            solucoes.length
+              ? `
+                <div class="parecer-solucoes-title"><strong>Soluções Recomendadas</strong></div>
+                <ul class="parecer-solucoes">
+                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+                </ul>
+              `
+              : ""
+          }
         `;
         diagnosticoParecerEl.style.display = "block";
       }
 
-      // ===== Áreas =====
-      Object.entries(data.areas).forEach(([area, res]) => {
+      // ===== Cards por área =====
+      Object.entries(data.areas || {}).forEach(([area, res]) => {
         const card = document.createElement("div");
         card.className = "result-card";
 
         card.innerHTML = `
-          <h3>${area}</h3>
-          <p>Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)</p>
-          <p>Classificação: ${classificarPercentual(res.percentual)}</p>
-          <p>${escapeHtml(res.mensagem)}</p>
+          <h3>${escapeHtml(area)}</h3>
+          <p class="result-score">Pontuação: ${escapeHtml(
+            res.total_pontos
+          )} / ${escapeHtml(res.pontuacao_maxima)} (${escapeHtml(res.percentual)}%)</p>
+          <p class="result-score">Classificação: ${escapeHtml(
+            classificarPercentual(res.percentual)
+          )}</p>
+          <p class="result-message">${escapeHtml(res.mensagem)}</p>
         `;
 
         resultGrid.appendChild(card);
       });
     } else {
+      // ===== Viabilidade =====
       const r = await fetch(API_VIABILIDADE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ respostas }),
       });
 
+      if (!r.ok) {
+        const detail = await r.text();
+        throw new Error(`Erro (${r.status}): ${detail || "sem detalhes"}`);
+      }
+
       const data = await r.json();
       const pg = data.parecer_global;
 
-      viabilidadeParecerEl.innerHTML = `
-        <h3>Parecer global — ${escapeHtml(pg.classificacao)}</h3>
-        <p><strong>Maturidade:</strong> ${data.percentual_maturidade}%</p>
-        <p class="parecer-msg">${escapeHtml(pg.mensagem)}</p>
-        <ul>
-          ${pg.solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-        </ul>
-      `;
-      viabilidadeParecerEl.style.display = "block";
+      if (viabilidadeParecerEl && pg) {
+        // evita duplicar: corta o texto antes do bloco de soluções
+        const rawMsg = String(pg.mensagem || data.mensagem || "");
+        const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
+
+        const solucoes = Array.isArray(pg.solucoes) ? pg.solucoes : [];
+
+        viabilidadeParecerEl.innerHTML = `
+          <div class="parecer-top">
+            <h3 class="parecer-title">Parecer global — ${escapeHtml(
+              pg.classificacao || "Parecer global"
+            )}</h3>
+            <div class="parecer-range">
+              Maturidade: ${escapeHtml(data.percentual_maturidade)}%
+            </div>
+          </div>
+
+          <p class="parecer-msg">${escapeHtml(msg)}</p>
+
+          ${
+            solucoes.length
+              ? `
+                <div class="parecer-solucoes-title"><strong>Soluções CE Infinity recomendadas</strong></div>
+                <ul class="parecer-solucoes">
+                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+                </ul>
+              `
+              : ""
+          }
+        `;
+        viabilidadeParecerEl.style.display = "block";
+      }
+
+      // Cards por área (resumo)
+      Object.entries(data.areas || {}).forEach(([area, resumo]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+
+        card.innerHTML = `
+          <h3>${escapeHtml(area)}</h3>
+          <p class="result-score">Pontuação: ${escapeHtml(
+            resumo.total_pontos
+          )} / ${escapeHtml(resumo.pontuacao_maxima)} (${escapeHtml(
+          resumo.percentual
+        )}%)</p>
+          <p class="result-score">Classificação: ${escapeHtml(
+            classificarPercentual(resumo.percentual)
+          )}</p>
+        `;
+
+        resultGrid.appendChild(card);
+      });
     }
 
     resultadosSection.style.display = "block";
     btnPdf.style.display = "inline-block";
   } catch (e) {
-    errorEl.textContent = "Erro ao enviar diagnóstico.";
+    console.error(e);
+    errorEl.textContent = e?.message || "Erro ao enviar.";
   } finally {
     btnEnviar.disabled = false;
   }
 });
 
+// PDF
 btnPdf.addEventListener("click", () => window.print());
