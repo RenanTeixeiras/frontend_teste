@@ -16,7 +16,7 @@ function escapeHtml(str) {
 const API_DIAGNOSTICO_URL = "https://ce-infinity.onrender.com/api/diagnostico";
 const API_VIABILIDADE_URL = "https://ce-infinity.onrender.com/api/viabilidade";
 
-let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
+let currentFormType = "diagnostico";
 
 const AREAS_DIAGNOSTICO = {
   Marketing: [
@@ -101,17 +101,10 @@ const AREAS_VIABILIDADE = {
   ],
 };
 
-const ANSWER_OPTIONS_DIAGNOSTICO = [
-  { label: "Sim", value: 2, description: "2 pontos" },
-  { label: "Não", value: 1, description: "1 ponto" },
-  { label: "Não sei", value: 0, description: "0 pontos" },
-];
-
-// Viabilidade agora também usa 2/1/0 (igual ao diagnóstico)
-const ANSWER_OPTIONS_VIABILIDADE = [
-  { label: "Sim", value: 2, description: "2 pontos" },
-  { label: "Não", value: 1, description: "1 ponto" },
-  { label: "Não sei", value: 0, description: "0 pontos" },
+const ANSWER_OPTIONS = [
+  { label: "Sim", value: 2 },
+  { label: "Não", value: 1 },
+  { label: "Não sei", value: 0 },
 ];
 
 const formEl = document.getElementById("diagnostico-form");
@@ -121,76 +114,35 @@ const resultadosSection = document.getElementById("resultados");
 const resultGrid = document.getElementById("result-grid");
 const btnPdf = document.getElementById("btn-pdf");
 
-const pageTitle = document.getElementById("page-title");
-const pageSubtitle = document.getElementById("page-subtitle");
-const resultadosTitle = document.getElementById("resultados-title");
-
-const selectorButtons = document.querySelectorAll(".selector-btn");
-const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
 const diagnosticoParecerEl = document.getElementById("diagnostico-parecer");
+const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
 
-function getCurrentAreas() {
-  return currentFormType === "diagnostico" ? AREAS_DIAGNOSTICO : AREAS_VIABILIDADE;
-}
-
-function getCurrentAnswerOptions() {
+function getAreas() {
   return currentFormType === "diagnostico"
-    ? ANSWER_OPTIONS_DIAGNOSTICO
-    : ANSWER_OPTIONS_VIABILIDADE;
-}
-
-function updateHeaderTexts() {
-  if (currentFormType === "diagnostico") {
-    pageTitle.textContent = "Diagnóstico Empresarial CE Infinity";
-    pageSubtitle.textContent =
-      "Responda às perguntas de cada área para receber os feedbacks personalizados.";
-    resultadosTitle.textContent = "Resultados por área";
-    btnEnviar.textContent = "Enviar diagnóstico";
-  } else {
-    pageTitle.textContent = "Viabilidade de Novas Ideias CE Infinity";
-    pageSubtitle.textContent =
-      "Avalie o nível de maturidade da sua ideia de negócio respondendo às perguntas abaixo.";
-    resultadosTitle.textContent = "Resultado";
-    btnEnviar.textContent = "Enviar viabilidade";
-  }
-}
-
-function resetResultados() {
-  resultadosSection.style.display = "none";
-  resultGrid.innerHTML = "";
-  btnPdf.style.display = "none";
-
-  if (diagnosticoParecerEl) {
-    diagnosticoParecerEl.style.display = "none";
-    diagnosticoParecerEl.innerHTML = "";
-  }
-
-  if (viabilidadeParecerEl) {
-    viabilidadeParecerEl.style.display = "none";
-    viabilidadeParecerEl.innerHTML = "";
-  }
+    ? AREAS_DIAGNOSTICO
+    : AREAS_VIABILIDADE;
 }
 
 function renderForm() {
   formEl.innerHTML = "";
   errorEl.textContent = "";
-  resetResultados();
+  resultadosSection.style.display = "none";
+  diagnosticoParecerEl.style.display = "none";
+  viabilidadeParecerEl.style.display = "none";
+  resultGrid.innerHTML = "";
 
-  const AREAS_ATUAL = getCurrentAreas();
-  const answerOptions = getCurrentAnswerOptions();
-
-  Object.entries(AREAS_ATUAL).forEach(([areaNome, perguntas]) => {
-    const areaCard = document.createElement("section");
-    areaCard.className = "area-card";
+  Object.entries(getAreas()).forEach(([area, perguntas]) => {
+    const card = document.createElement("section");
+    card.className = "area-card";
 
     const h2 = document.createElement("h2");
-    h2.textContent = areaNome;
-    areaCard.appendChild(h2);
+    h2.textContent = area;
+    card.appendChild(h2);
 
     const ol = document.createElement("ol");
     ol.className = "question-list";
 
-    perguntas.forEach((pergunta, index) => {
+    perguntas.forEach((pergunta, i) => {
       const li = document.createElement("li");
       li.className = "question-item";
 
@@ -198,299 +150,130 @@ function renderForm() {
       p.textContent = pergunta;
       li.appendChild(p);
 
-      const answerGroup = document.createElement("div");
-      answerGroup.className = "answer-group";
+      const group = document.createElement("div");
+      group.className = "answer-group";
 
-      answerOptions.forEach((opt) => {
+      ANSWER_OPTIONS.forEach((opt) => {
         const label = document.createElement("label");
         label.className = "answer-pill";
 
         const input = document.createElement("input");
         input.type = "radio";
-        input.name = `${areaNome}__${index}`;
-        input.value = String(opt.value);
-
-        const spanText = document.createElement("span");
-        spanText.textContent = opt.label;
-
-        const spanDesc = document.createElement("span");
-        spanDesc.style.opacity = "0.7";
-        spanDesc.style.fontSize = "0.75rem";
-        spanDesc.textContent = ` (${opt.description})`;
+        input.name = `${area}__${i}`;
+        input.value = opt.value;
 
         label.appendChild(input);
-        label.appendChild(spanText);
-        label.appendChild(spanDesc);
-
-        answerGroup.appendChild(label);
+        label.append(` ${opt.label}`);
+        group.appendChild(label);
       });
 
-      li.appendChild(answerGroup);
+      li.appendChild(group);
       ol.appendChild(li);
     });
 
-    areaCard.appendChild(ol);
-    formEl.appendChild(areaCard);
+    card.appendChild(ol);
+    formEl.appendChild(card);
   });
 }
 
-updateHeaderTexts();
 renderForm();
-
-selectorButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const formType = btn.getAttribute("data-form");
-    if (!formType || formType === currentFormType) return;
-
-    currentFormType = formType;
-
-    selectorButtons.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    updateHeaderTexts();
-    renderForm();
-  });
-});
 
 btnEnviar.addEventListener("click", async () => {
   errorEl.textContent = "";
-  resetResultados();
+  resultadosSection.style.display = "none";
+  diagnosticoParecerEl.style.display = "none";
+  viabilidadeParecerEl.style.display = "none";
+  resultGrid.innerHTML = "";
 
-  const AREAS_ATUAL = getCurrentAreas();
-  const respostasPorArea = {};
+  const respostas = {};
 
-  for (const [areaNome, perguntas] of Object.entries(AREAS_ATUAL)) {
-    const pontosArea = [];
+  for (const [area, perguntas] of Object.entries(getAreas())) {
+    respostas[area] = [];
 
     for (let i = 0; i < perguntas.length; i++) {
-      const name = `${areaNome}__${i}`;
       const checked = document.querySelector(
-        `input[name="${CSS.escape(name)}"]:checked`
+        `input[name="${CSS.escape(`${area}__${i}`)}"]:checked`
       );
-
       if (!checked) {
-        errorEl.textContent =
-          "Responda todas as perguntas de todas as áreas antes de enviar.";
+        errorEl.textContent = "Responda todas as perguntas.";
         return;
       }
-
-      pontosArea.push(Number(checked.value));
+      respostas[area].push(Number(checked.value));
     }
-
-    respostasPorArea[areaNome] = pontosArea;
   }
 
   btnEnviar.disabled = true;
-  btnEnviar.textContent = "Enviando...";
 
   try {
     if (currentFormType === "diagnostico") {
-      const resp = await fetch(API_DIAGNOSTICO_URL, {
+      const r = await fetch(API_DIAGNOSTICO_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(respostasPorArea),
+        body: JSON.stringify(respostas),
       });
 
-      if (!resp.ok) {
-        const detail = await resp.text();
-        throw new Error(
-          `Erro ao chamar API (${resp.status}): ${detail || "sem detalhes"}`
-        );
-      }
+      const data = await r.json();
 
-      const data = await resp.json();
-      resultGrid.innerHTML = "";
-
-      // =====================
-      // Parecer global (vindo da API)
-      // =====================
-      if (diagnosticoParecerEl && data?.parecer_global) {
-        const pg = data.parecer_global;
-
-        const classificacao = pg?.classificacao || "Parecer global";
-        const minP = pg?.min_percentual ?? "";
-        const maxP = pg?.max_percentual ?? "";
-        const percentualGlobal = data?.percentual_global ?? "";
-
-        const rawMsg = pg?.mensagem || "";
-
-        // Evita duplicação: remove qualquer bloco textual de soluções,
-        // pois renderizamos a lista estruturada (quando houver).
-        const msg = rawMsg
+      // ===== Parecer Global =====
+      const fg = data?.global?.feedback_global;
+      if (fg) {
+        const msg = fg.mensagem
           .split("Soluções Recomendadas")[0]
-          .split("Soluções CE Infinity recomendadas")[0]
           .trim();
 
-        const solucoes = Array.isArray(pg?.solucoes) ? pg.solucoes : [];
-
         diagnosticoParecerEl.innerHTML = `
-          <div class="parecer-top">
-            <h3 class="parecer-title">Parecer global — ${escapeHtml(classificacao)}</h3>
-            <div class="parecer-range">
-              Faixa: ${minP}${minP !== "" ? "%" : ""} a ${maxP}${maxP !== "" ? "%" : ""}%
-              ${percentualGlobal !== "" ? ` • Percentual global: ${escapeHtml(percentualGlobal)}%` : ""}
-            </div>
-          </div>
-
+          <h3>Parecer global — ${escapeHtml(fg.titulo)}</h3>
+          <p><strong>Percentual global:</strong> ${data.global.percentual}%</p>
           <p class="parecer-msg">${escapeHtml(msg)}</p>
-
-          ${
-            solucoes.length
-              ? `
-                <div class="parecer-solucoes-title"><strong>Soluções Recomendadas</strong></div>
-                <ul class="parecer-solucoes">
-                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-                </ul>
-              `
-              : ""
-          }
+          <ul>
+            ${fg.solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+          </ul>
         `;
-
         diagnosticoParecerEl.style.display = "block";
       }
 
-      // =====================
-      // Cards por área
-      // =====================
-      const areasData =
-        data?.areas && typeof data.areas === "object" ? data.areas : data;
+      // ===== Áreas =====
+      Object.entries(data.areas).forEach(([area, res]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
 
-      Object.entries(areasData)
-        .filter(([k]) => {
-          // protege formato novo
-          if (
-            k === "areas" ||
-            k === "parecer_global" ||
-            k === "percentual_global"
-          )
-            return false;
-          return true;
-        })
-        .forEach(([area, res]) => {
-          const card = document.createElement("div");
-          card.className = "result-card";
-
-          const h3 = document.createElement("h3");
-          h3.textContent = area;
-          card.appendChild(h3);
-
-          const pScore = document.createElement("p");
-          pScore.className = "result-score";
-          pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
-          card.appendChild(pScore);
-
-          const classificacao = classificarPercentual(res.percentual);
-
-          const pClass = document.createElement("p");
-          pClass.className = "result-score";
-          pClass.textContent = `Classificação: ${classificacao}`;
-          card.appendChild(pClass);
-
-          const pMsg = document.createElement("p");
-          pMsg.className = "result-message";
-          pMsg.textContent = res.mensagem;
-          card.appendChild(pMsg);
-
-          resultGrid.appendChild(card);
-        });
-
-      resultadosSection.style.display = "block";
-      btnPdf.style.display = "inline-block";
-    } else {
-      // ===== Viabilidade (com parecer_global) =====
-      const resp = await fetch(API_VIABILIDADE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ respostas: respostasPorArea }),
-      });
-
-      if (!resp.ok) {
-        const detail = await resp.text();
-        throw new Error(
-          `Erro ao chamar API (${resp.status}): ${detail || "sem detalhes"}`
-        );
-      }
-
-      const data = await resp.json();
-      resultGrid.innerHTML = "";
-
-      // ----- Render parecer_global -----
-      if (viabilidadeParecerEl) {
-        const pg = data.parecer_global;
-
-        const classificacao = pg?.classificacao || "Parecer global";
-        const minP = pg?.min_percentual ?? "";
-        const maxP = pg?.max_percentual ?? "";
-        const rawMsg = pg?.mensagem || data.mensagem || "";
-
-        // Evita duplicação: corta a parte de soluções do texto, e renderiza lista separada
-        const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
-        const solucoes = Array.isArray(pg?.solucoes) ? pg.solucoes : [];
-
-        viabilidadeParecerEl.innerHTML = `
-          <div class="parecer-top">
-            <h3 class="parecer-title">Parecer global — ${escapeHtml(classificacao)}</h3>
-            <div class="parecer-range">
-              Faixa: ${minP}${minP !== "" ? "%" : ""} a ${maxP}${maxP !== "" ? "%" : ""}%
-              • Maturidade: ${escapeHtml(data.percentual_maturidade)}%
-            </div>
-          </div>
-
-          <p class="parecer-msg">${escapeHtml(msg)}</p>
-
-          ${
-            solucoes.length
-              ? `
-                <div class="parecer-solucoes-title"><strong>Soluções CE Infinity recomendadas</strong></div>
-                <ul class="parecer-solucoes">
-                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-                </ul>
-              `
-              : ""
-          }
+        card.innerHTML = `
+          <h3>${area}</h3>
+          <p>Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)</p>
+          <p>Classificação: ${classificarPercentual(res.percentual)}</p>
+          <p>${escapeHtml(res.mensagem)}</p>
         `;
 
-        viabilidadeParecerEl.style.display = "block";
-      }
+        resultGrid.appendChild(card);
+      });
+    } else {
+      const r = await fetch(API_VIABILIDADE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ respostas }),
+      });
 
-      // ----- Cards por área -----
-      if (data.areas) {
-        Object.entries(data.areas).forEach(([area, resumo]) => {
-          const card = document.createElement("div");
-          card.className = "result-card";
+      const data = await r.json();
+      const pg = data.parecer_global;
 
-          const h3 = document.createElement("h3");
-          h3.textContent = area;
-          card.appendChild(h3);
-
-          const pScore = document.createElement("p");
-          pScore.className = "result-score";
-          pScore.textContent = `Pontuação: ${resumo.total_pontos} / ${resumo.pontuacao_maxima} (${resumo.percentual}%)`;
-          card.appendChild(pScore);
-
-          const classificacaoArea = classificarPercentual(resumo.percentual);
-          const pClass = document.createElement("p");
-          pClass.className = "result-score";
-          pClass.textContent = `Classificação: ${classificacaoArea}`;
-          card.appendChild(pClass);
-
-          resultGrid.appendChild(card);
-        });
-      }
-
-      resultadosSection.style.display = "block";
-      btnPdf.style.display = "inline-block";
+      viabilidadeParecerEl.innerHTML = `
+        <h3>Parecer global — ${escapeHtml(pg.classificacao)}</h3>
+        <p><strong>Maturidade:</strong> ${data.percentual_maturidade}%</p>
+        <p class="parecer-msg">${escapeHtml(pg.mensagem)}</p>
+        <ul>
+          ${pg.solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+        </ul>
+      `;
+      viabilidadeParecerEl.style.display = "block";
     }
-  } catch (err) {
-    console.error(err);
-    errorEl.textContent = err.message || "Erro ao enviar.";
+
+    resultadosSection.style.display = "block";
+    btnPdf.style.display = "inline-block";
+  } catch (e) {
+    errorEl.textContent = "Erro ao enviar diagnóstico.";
   } finally {
     btnEnviar.disabled = false;
-    updateHeaderTexts();
   }
 });
 
-// PDF via print
-btnPdf.addEventListener("click", () => {
-  window.print();
-});
+btnPdf.addEventListener("click", () => window.print());
