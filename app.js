@@ -127,6 +127,7 @@ const resultadosTitle = document.getElementById("resultados-title");
 
 const selectorButtons = document.querySelectorAll(".selector-btn");
 const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
+const diagnosticoParecerEl = document.getElementById("diagnostico-parecer");
 
 function getCurrentAreas() {
   return currentFormType === "diagnostico" ? AREAS_DIAGNOSTICO : AREAS_VIABILIDADE;
@@ -158,6 +159,11 @@ function resetResultados() {
   resultadosSection.style.display = "none";
   resultGrid.innerHTML = "";
   btnPdf.style.display = "none";
+
+  if (diagnosticoParecerEl) {
+    diagnosticoParecerEl.style.display = "none";
+    diagnosticoParecerEl.innerHTML = "";
+  }
 
   if (viabilidadeParecerEl) {
     viabilidadeParecerEl.style.display = "none";
@@ -226,11 +232,9 @@ function renderForm() {
     areaCard.appendChild(ol);
     formEl.appendChild(areaCard);
   });
-
-  updateHeaderTexts();
 }
 
-// init
+updateHeaderTexts();
 renderForm();
 
 selectorButtons.forEach((btn) => {
@@ -243,6 +247,7 @@ selectorButtons.forEach((btn) => {
     selectorButtons.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
 
+    updateHeaderTexts();
     renderForm();
   });
 });
@@ -296,38 +301,103 @@ btnEnviar.addEventListener("click", async () => {
       const data = await resp.json();
       resultGrid.innerHTML = "";
 
-      Object.entries(data).forEach(([area, res]) => {
-        const card = document.createElement("div");
-        card.className = "result-card";
+      // =====================
+      // Parecer global (vindo da API)
+      // =====================
+      if (diagnosticoParecerEl && data?.parecer_global) {
+        const pg = data.parecer_global;
 
-        const h3 = document.createElement("h3");
-        h3.textContent = area;
-        card.appendChild(h3);
+        const classificacao = pg?.classificacao || "Parecer global";
+        const minP = pg?.min_percentual ?? "";
+        const maxP = pg?.max_percentual ?? "";
+        const percentualGlobal = data?.percentual_global ?? "";
 
-        const pScore = document.createElement("p");
-        pScore.className = "result-score";
-        pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
-        card.appendChild(pScore);
+        const rawMsg = pg?.mensagem || "";
 
-        const classificacao = classificarPercentual(res.percentual);
+        // Evita duplicação: remove qualquer bloco textual de soluções,
+        // pois renderizamos a lista estruturada (quando houver).
+        const msg = rawMsg
+          .split("Soluções Recomendadas")[0]
+          .split("Soluções CE Infinity recomendadas")[0]
+          .trim();
 
-        const pClass = document.createElement("p");
-        pClass.className = "result-score";
-        pClass.textContent = `Classificação: ${classificacao}`;
-        card.appendChild(pClass);
+        const solucoes = Array.isArray(pg?.solucoes) ? pg.solucoes : [];
 
-        const pMsg = document.createElement("p");
-        pMsg.className = "result-message";
-        pMsg.textContent = res.mensagem;
-        card.appendChild(pMsg);
+        diagnosticoParecerEl.innerHTML = `
+          <div class="parecer-top">
+            <h3 class="parecer-title">Parecer global — ${escapeHtml(classificacao)}</h3>
+            <div class="parecer-range">
+              Faixa: ${minP}${minP !== "" ? "%" : ""} a ${maxP}${maxP !== "" ? "%" : ""}%
+              ${percentualGlobal !== "" ? ` • Percentual global: ${escapeHtml(percentualGlobal)}%` : ""}
+            </div>
+          </div>
 
-        resultGrid.appendChild(card);
-      });
+          <p class="parecer-msg">${escapeHtml(msg)}</p>
+
+          ${
+            solucoes.length
+              ? `
+                <div class="parecer-solucoes-title"><strong>Soluções Recomendadas</strong></div>
+                <ul class="parecer-solucoes">
+                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+                </ul>
+              `
+              : ""
+          }
+        `;
+
+        diagnosticoParecerEl.style.display = "block";
+      }
+
+      // =====================
+      // Cards por área
+      // =====================
+      const areasData =
+        data?.areas && typeof data.areas === "object" ? data.areas : data;
+
+      Object.entries(areasData)
+        .filter(([k]) => {
+          // protege formato novo
+          if (
+            k === "areas" ||
+            k === "parecer_global" ||
+            k === "percentual_global"
+          )
+            return false;
+          return true;
+        })
+        .forEach(([area, res]) => {
+          const card = document.createElement("div");
+          card.className = "result-card";
+
+          const h3 = document.createElement("h3");
+          h3.textContent = area;
+          card.appendChild(h3);
+
+          const pScore = document.createElement("p");
+          pScore.className = "result-score";
+          pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
+          card.appendChild(pScore);
+
+          const classificacao = classificarPercentual(res.percentual);
+
+          const pClass = document.createElement("p");
+          pClass.className = "result-score";
+          pClass.textContent = `Classificação: ${classificacao}`;
+          card.appendChild(pClass);
+
+          const pMsg = document.createElement("p");
+          pMsg.className = "result-message";
+          pMsg.textContent = res.mensagem;
+          card.appendChild(pMsg);
+
+          resultGrid.appendChild(card);
+        });
 
       resultadosSection.style.display = "block";
       btnPdf.style.display = "inline-block";
     } else {
-      // ===== Viabilidade (agora com parecer_global) =====
+      // ===== Viabilidade (com parecer_global) =====
       const resp = await fetch(API_VIABILIDADE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,7 +423,7 @@ btnEnviar.addEventListener("click", async () => {
         const maxP = pg?.max_percentual ?? "";
         const rawMsg = pg?.mensagem || data.mensagem || "";
 
-        // remove a parte "Soluções CE Infinity recomendadas..." da mensagem (para não duplicar)
+        // Evita duplicação: corta a parte de soluções do texto, e renderiza lista separada
         const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
         const solucoes = Array.isArray(pg?.solucoes) ? pg.solucoes : [];
 

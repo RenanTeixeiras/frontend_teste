@@ -175,7 +175,7 @@ button.primary:disabled {
   font-size: 0.9rem;
 }
 
-/* ===== NOVO: Parecer global (Viabilidade) ===== */
+/* ===== Parecer global (Diagnóstico e Viabilidade) ===== */
 .parecer-card {
   border-radius: 0.75rem;
   background: #ffffff;
@@ -205,7 +205,7 @@ button.primary:disabled {
 
 .parecer-msg {
   margin: 0.5rem 0 0.75rem;
-  white-space: pre-line; /* respeita \n da mensagem da API */
+  white-space: pre-line;
   font-size: 0.95rem;
 }
 
