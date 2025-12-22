@@ -1,3 +1,4 @@
+// ===== Helpers =====
 function classificarPercentual(percentual) {
   if (percentual >= 80) return "Alto desempenho";
   if (percentual >= 60) return "Ajuste necessário";
@@ -13,11 +14,31 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+function setActiveStep(step) {
+  document.querySelectorAll(".step-chip").forEach((el) => {
+    el.classList.toggle("active", el.getAttribute("data-step") === String(step));
+  });
+}
+
+function showScreen(name) {
+  const screens = ["dados", "perguntas", "resultados"];
+  screens.forEach((s) => {
+    const el = document.getElementById(`screen-${s}`);
+    if (!el) return;
+    el.style.display = s === name ? "block" : "none";
+  });
+}
+
+// ===== API URLs =====
 const API_DIAGNOSTICO_URL = "https://ce-infinity.onrender.com/api/diagnostico";
 const API_VIABILIDADE_URL = "https://ce-infinity.onrender.com/api/viabilidade";
 
+// ===== Estado =====
 let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
+let leadEmpresa = null;
+let leadPessoa = null;
 
+// ===== Perguntas (mantive as que você já tinha) =====
 const AREAS_DIAGNOSTICO = {
   Marketing: [
     "Sua empresa tem metas de vendas mensais e acompanha os resultados?",
@@ -101,80 +122,78 @@ const AREAS_VIABILIDADE = {
   ],
 };
 
+// Respostas 2/1/0 (como suas APIs estão hoje)
 const ANSWER_OPTIONS = [
   { label: "Sim", value: 2 },
   { label: "Não", value: 1 },
   { label: "Não sei", value: 0 },
 ];
 
-// ===== elementos do DOM =====
-const formEl = document.getElementById("diagnostico-form");
-const btnEnviar = document.getElementById("btn-enviar");
+// ===== DOM =====
+const formPerguntasEl = document.getElementById("diagnostico-form");
 const errorEl = document.getElementById("error");
-const resultadosSection = document.getElementById("resultados");
 const resultGrid = document.getElementById("result-grid");
+const btnEnviar = document.getElementById("btn-enviar");
 const btnPdf = document.getElementById("btn-pdf");
+const btnRefazer = document.getElementById("btn-refazer");
+
+const formEmpresa = document.getElementById("form-empresa");
+const formPessoa = document.getElementById("form-pessoa");
+
+const btnAvancarEmpresa = document.getElementById("btn-avancar-dados");
+const btnAvancarPessoa = document.getElementById("btn-avancar-dados-pessoa");
+const btnVoltarDados = document.getElementById("btn-voltar-dados");
 
 const diagnosticoParecerEl = document.getElementById("diagnostico-parecer");
 const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
 
-// (opcional, se existirem no HTML)
-const pageTitle = document.getElementById("page-title");
-const pageSubtitle = document.getElementById("page-subtitle");
 const resultadosTitle = document.getElementById("resultados-title");
 
+// ===== Selector =====
+function setupSelector() {
+  const buttons = document.querySelectorAll(".selector-btn");
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const formType = btn.getAttribute("data-form");
+      if (!formType || formType === currentFormType) return;
+
+      currentFormType = formType;
+
+      buttons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      // alterna forms de dados
+      if (currentFormType === "diagnostico") {
+        formEmpresa.style.display = "block";
+        formPessoa.style.display = "none";
+      } else {
+        formEmpresa.style.display = "none";
+        formPessoa.style.display = "block";
+      }
+
+      // reseta estado e vai para "dados"
+      resetAll();
+      showScreen("dados");
+      setActiveStep(1);
+    });
+  });
+}
+
+// ===== Render perguntas =====
 function getAreas() {
-  return currentFormType === "diagnostico"
-    ? AREAS_DIAGNOSTICO
-    : AREAS_VIABILIDADE;
+  return currentFormType === "diagnostico" ? AREAS_DIAGNOSTICO : AREAS_VIABILIDADE;
 }
 
-function resetResultados() {
-  resultadosSection.style.display = "none";
-  resultGrid.innerHTML = "";
-  btnPdf.style.display = "none";
-
-  if (diagnosticoParecerEl) {
-    diagnosticoParecerEl.style.display = "none";
-    diagnosticoParecerEl.innerHTML = "";
-  }
-
-  if (viabilidadeParecerEl) {
-    viabilidadeParecerEl.style.display = "none";
-    viabilidadeParecerEl.innerHTML = "";
-  }
-}
-
-function updateHeaderTexts() {
-  if (!pageTitle || !pageSubtitle || !resultadosTitle) return;
-
-  if (currentFormType === "diagnostico") {
-    pageTitle.textContent = "Diagnóstico Empresarial CE Infinity";
-    pageSubtitle.textContent =
-      "Responda às perguntas de cada área para receber os feedbacks personalizados.";
-    resultadosTitle.textContent = "Resultados por área";
-    btnEnviar.textContent = "Enviar diagnóstico";
-  } else {
-    pageTitle.textContent = "Viabilidade de Novas Ideias CE Infinity";
-    pageSubtitle.textContent =
-      "Avalie o nível de maturidade da sua ideia de negócio respondendo às perguntas abaixo.";
-    resultadosTitle.textContent = "Resultado";
-    btnEnviar.textContent = "Enviar viabilidade";
-  }
-}
-
-function renderForm() {
-  formEl.innerHTML = "";
-  errorEl.textContent = "";
-  resetResultados();
+function renderPerguntas() {
+  formPerguntasEl.innerHTML = "";
 
   Object.entries(getAreas()).forEach(([area, perguntas]) => {
-    const card = document.createElement("section");
-    card.className = "area-card";
+    const areaCard = document.createElement("section");
+    areaCard.className = "area-card";
 
     const h2 = document.createElement("h2");
     h2.textContent = area;
-    card.appendChild(h2);
+    areaCard.appendChild(h2);
 
     const ol = document.createElement("ol");
     ol.className = "question-list";
@@ -208,221 +227,326 @@ function renderForm() {
       ol.appendChild(li);
     });
 
-    card.appendChild(ol);
-    formEl.appendChild(card);
+    areaCard.appendChild(ol);
+    formPerguntasEl.appendChild(areaCard);
   });
 }
 
-/* =========================
-   ✅ SELETOR DE FORMULÁRIO
-   ========================= */
-function setupFormSelector() {
-  const selectorButtons = document.querySelectorAll(".selector-btn");
-  if (!selectorButtons.length) return;
-
-  selectorButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const formType = btn.getAttribute("data-form");
-      if (!formType || formType === currentFormType) return;
-
-      currentFormType = formType;
-
-      selectorButtons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      updateHeaderTexts();
-      renderForm();
-    });
-  });
+// ===== Coleta lead =====
+function readForm(formEl) {
+  const fd = new FormData(formEl);
+  const obj = {};
+  for (const [k, v] of fd.entries()) obj[k] = String(v).trim();
+  return obj;
 }
 
-// init
-setupFormSelector();
-updateHeaderTexts();
-renderForm();
+function validateEmpresa(empresa) {
+  const required = [
+    "nome_empresa",
+    "nome_responsavel",
+    "email",
+    "whatsapp",
+    "cidade",
+    "estado",
+    "segmento",
+    "tipo_negocio",
+    "porte_empresa",
+    "faturamento_estimado",
+    "numero_colaboradores",
+    "tempo_operacao",
+  ];
 
-/* =========================
-   ENVIO
-   ========================= */
-btnEnviar.addEventListener("click", async () => {
+  for (const k of required) {
+    if (!empresa[k]) return `Preencha o campo obrigatório: ${k.replaceAll("_", " ")}`;
+  }
+
+  if (empresa.estado.length !== 2) return "Estado deve ter 2 letras (ex: BA).";
+
+  if (empresa.segmento === "franquia" && !empresa.numero_unidades) {
+    return "Número de unidades é obrigatório quando segmento = Franquia.";
+  }
+
+  return null;
+}
+
+function validatePessoa(pessoa) {
+  const required = [
+    "nome_completo",
+    "email",
+    "whatsapp",
+    "cidade",
+    "estado",
+    "profissao_atual",
+    "ja_empreende",
+    "tipo_negocio_desejado",
+    "ideia",
+    "previsao_investimento",
+    "prazo_para_abrir",
+  ];
+
+  for (const k of required) {
+    if (!pessoa[k]) return `Preencha o campo obrigatório: ${k.replaceAll("_", " ")}`;
+  }
+
+  if (pessoa.estado.length !== 2) return "Estado deve ter 2 letras (ex: BA).";
+  return null;
+}
+
+// ===== Navegação =====
+btnAvancarEmpresa.addEventListener("click", () => {
   errorEl.textContent = "";
-  resetResultados();
 
+  const empresa = readForm(formEmpresa);
+  const err = validateEmpresa(empresa);
+  if (err) {
+    alert(err);
+    return;
+  }
+
+  // normaliza números
+  empresa.numero_unidades =
+    empresa.numero_unidades ? Number(empresa.numero_unidades) : null;
+  empresa.numero_colaboradores = Number(empresa.numero_colaboradores);
+
+  leadEmpresa = empresa;
+
+  renderPerguntas();
+  showScreen("perguntas");
+  setActiveStep(2);
+
+  btnEnviar.textContent = "Enviar diagnóstico";
+});
+
+btnAvancarPessoa.addEventListener("click", () => {
+  errorEl.textContent = "";
+
+  const pessoa = readForm(formPessoa);
+  const err = validatePessoa(pessoa);
+  if (err) {
+    alert(err);
+    return;
+  }
+
+  leadPessoa = pessoa;
+
+  renderPerguntas();
+  showScreen("perguntas");
+  setActiveStep(2);
+
+  btnEnviar.textContent = "Enviar viabilidade";
+});
+
+btnVoltarDados.addEventListener("click", () => {
+  showScreen("dados");
+  setActiveStep(1);
+});
+
+// ===== Envio perguntas =====
+function montarRespostas() {
   const respostas = {};
   const areas = getAreas();
 
   for (const [area, perguntas] of Object.entries(areas)) {
     respostas[area] = [];
-
     for (let i = 0; i < perguntas.length; i++) {
+      const name = `${area}__${i}`;
       const checked = document.querySelector(
-        `input[name="${CSS.escape(`${area}__${i}`)}"]:checked`
+        `input[name="${CSS.escape(name)}"]:checked`
       );
-
-      if (!checked) {
-        errorEl.textContent = "Responda todas as perguntas.";
-        return;
-      }
-
+      if (!checked) return { error: "Responda todas as perguntas antes de enviar." };
       respostas[area].push(Number(checked.value));
     }
   }
 
+  return { respostas };
+}
+
+function resetAll() {
+  errorEl.textContent = "";
+  resultGrid.innerHTML = "";
+  btnPdf.style.display = "none";
+  if (diagnosticoParecerEl) {
+    diagnosticoParecerEl.style.display = "none";
+    diagnosticoParecerEl.innerHTML = "";
+  }
+  if (viabilidadeParecerEl) {
+    viabilidadeParecerEl.style.display = "none";
+    viabilidadeParecerEl.innerHTML = "";
+  }
+}
+
+async function postJson(url, body) {
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return resp;
+}
+
+function renderDiagnostico(data) {
+  // título
+  resultadosTitle.textContent = "Resultados por área";
+
+  // parecer global (vem da API)
+  const fg = data?.global?.feedback_global;
+  const percentualGlobal = data?.global?.percentual;
+
+  if (fg && diagnosticoParecerEl) {
+    const solucoes = Array.isArray(fg.solucoes) ? fg.solucoes : [];
+    diagnosticoParecerEl.innerHTML = `
+      <h3 class="parecer-title">Parecer global — ${escapeHtml(fg.titulo || "Feedback global")}</h3>
+      <div class="parecer-range">Percentual global: ${escapeHtml(percentualGlobal)}%</div>
+      <p class="parecer-msg">${escapeHtml(fg.mensagem || "")}</p>
+      ${
+        solucoes.length
+          ? `
+            <div class="parecer-solucoes-title"><strong>Soluções Recomendadas</strong></div>
+            <ul class="parecer-solucoes">
+              ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+            </ul>
+          `
+          : ""
+      }
+    `;
+    diagnosticoParecerEl.style.display = "block";
+  }
+
+  // cards por área
+  Object.entries(data.areas || {}).forEach(([area, res]) => {
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `
+      <h3>${escapeHtml(area)}</h3>
+      <p class="result-score">Pontuação: ${escapeHtml(res.total_pontos)} / ${escapeHtml(
+      res.pontuacao_maxima
+    )} (${escapeHtml(res.percentual)}%)</p>
+      <p class="result-score">Classificação: ${escapeHtml(classificarPercentual(res.percentual))}</p>
+      <p class="result-message">${escapeHtml(res.mensagem)}</p>
+    `;
+    resultGrid.appendChild(card);
+  });
+}
+
+function renderViabilidade(data) {
+  resultadosTitle.textContent = "Resultado";
+
+  const pg = data.parecer_global;
+  if (pg && viabilidadeParecerEl) {
+    const rawMsg = String(pg.mensagem || data.mensagem || "");
+    // evita duplicar bloco de soluções
+    const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
+    const solucoes = Array.isArray(pg.solucoes) ? pg.solucoes : [];
+
+    viabilidadeParecerEl.innerHTML = `
+      <h3 class="parecer-title">Parecer global — ${escapeHtml(pg.classificacao || "Parecer global")}</h3>
+      <div class="parecer-range">Maturidade: ${escapeHtml(data.percentual_maturidade)}%</div>
+      <p class="parecer-msg">${escapeHtml(msg)}</p>
+      ${
+        solucoes.length
+          ? `
+            <div class="parecer-solucoes-title"><strong>Soluções CE Infinity recomendadas</strong></div>
+            <ul class="parecer-solucoes">
+              ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
+            </ul>
+          `
+          : ""
+      }
+    `;
+    viabilidadeParecerEl.style.display = "block";
+  }
+
+  // cards por área
+  Object.entries(data.areas || {}).forEach(([area, resumo]) => {
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `
+      <h3>${escapeHtml(area)}</h3>
+      <p class="result-score">Pontuação: ${escapeHtml(resumo.total_pontos)} / ${escapeHtml(
+      resumo.pontuacao_maxima
+    )} (${escapeHtml(resumo.percentual)}%)</p>
+      <p class="result-score">Classificação: ${escapeHtml(classificarPercentual(resumo.percentual))}</p>
+    `;
+    resultGrid.appendChild(card);
+  });
+}
+
+btnEnviar.addEventListener("click", async () => {
+  errorEl.textContent = "";
+  resultGrid.innerHTML = "";
+  resetAll();
+
+  const { respostas, error } = montarRespostas();
+  if (error) {
+    errorEl.textContent = error;
+    return;
+  }
+
   btnEnviar.disabled = true;
+  btnEnviar.textContent = "Enviando...";
 
   try {
     if (currentFormType === "diagnostico") {
-      const r = await fetch(API_DIAGNOSTICO_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(respostas),
-      });
+      // tenta enviar no formato novo (empresa + respostas)
+      const bodyNovo = { empresa: leadEmpresa, respostas };
 
-      if (!r.ok) {
-        const detail = await r.text();
-        throw new Error(`Erro (${r.status}): ${detail || "sem detalhes"}`);
+      let resp = await postJson(API_DIAGNOSTICO_URL, bodyNovo);
+
+      // fallback: API antiga espera só { "Marketing": [...] }
+      if (!resp.ok) {
+        const bodyAntigo = respostas; // dict direto por área
+        resp = await postJson(API_DIAGNOSTICO_URL, bodyAntigo);
       }
 
-      const data = await r.json();
-
-      // ===== Parecer Global (Diagnóstico) =====
-      const fg = data?.global?.feedback_global;
-      const percentualGlobal = data?.global?.percentual;
-
-      if (diagnosticoParecerEl && fg) {
-        const msg = String(fg.mensagem || "")
-          .split("Soluções Recomendadas")[0]
-          .trim();
-
-        const solucoes = Array.isArray(fg.solucoes) ? fg.solucoes : [];
-
-        diagnosticoParecerEl.innerHTML = `
-          <div class="parecer-top">
-            <h3 class="parecer-title">Parecer global — ${escapeHtml(
-              fg.titulo || "Feedback global"
-            )}</h3>
-            <div class="parecer-range">
-              ${
-                typeof percentualGlobal === "number"
-                  ? `Percentual global: ${escapeHtml(percentualGlobal)}%`
-                  : ""
-              }
-            </div>
-          </div>
-
-          <p class="parecer-msg">${escapeHtml(msg)}</p>
-
-          ${
-            solucoes.length
-              ? `
-                <div class="parecer-solucoes-title"><strong>Soluções Recomendadas</strong></div>
-                <ul class="parecer-solucoes">
-                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-                </ul>
-              `
-              : ""
-          }
-        `;
-        diagnosticoParecerEl.style.display = "block";
+      if (!resp.ok) {
+        const detail = await resp.text();
+        throw new Error(`Erro (${resp.status}): ${detail || "sem detalhes"}`);
       }
 
-      // ===== Cards por área =====
-      Object.entries(data.areas || {}).forEach(([area, res]) => {
-        const card = document.createElement("div");
-        card.className = "result-card";
-
-        card.innerHTML = `
-          <h3>${escapeHtml(area)}</h3>
-          <p class="result-score">Pontuação: ${escapeHtml(
-            res.total_pontos
-          )} / ${escapeHtml(res.pontuacao_maxima)} (${escapeHtml(res.percentual)}%)</p>
-          <p class="result-score">Classificação: ${escapeHtml(
-            classificarPercentual(res.percentual)
-          )}</p>
-          <p class="result-message">${escapeHtml(res.mensagem)}</p>
-        `;
-
-        resultGrid.appendChild(card);
-      });
+      const data = await resp.json();
+      renderDiagnostico(data);
     } else {
-      // ===== Viabilidade =====
-      const r = await fetch(API_VIABILIDADE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ respostas }),
-      });
+      // viabilidade: tenta enviar no formato novo (pessoa + respostas)
+      const bodyNovo = { pessoa: leadPessoa, respostas: respostas };
+      let resp = await postJson(API_VIABILIDADE_URL, bodyNovo);
 
-      if (!r.ok) {
-        const detail = await r.text();
-        throw new Error(`Erro (${r.status}): ${detail || "sem detalhes"}`);
+      // fallback: API antiga espera { respostas: {...} }
+      if (!resp.ok) {
+        const bodyAntigo = { respostas };
+        resp = await postJson(API_VIABILIDADE_URL, bodyAntigo);
       }
 
-      const data = await r.json();
-      const pg = data.parecer_global;
-
-      if (viabilidadeParecerEl && pg) {
-        // evita duplicar: corta o texto antes do bloco de soluções
-        const rawMsg = String(pg.mensagem || data.mensagem || "");
-        const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
-
-        const solucoes = Array.isArray(pg.solucoes) ? pg.solucoes : [];
-
-        viabilidadeParecerEl.innerHTML = `
-          <div class="parecer-top">
-            <h3 class="parecer-title">Parecer global — ${escapeHtml(
-              pg.classificacao || "Parecer global"
-            )}</h3>
-            <div class="parecer-range">
-              Maturidade: ${escapeHtml(data.percentual_maturidade)}%
-            </div>
-          </div>
-
-          <p class="parecer-msg">${escapeHtml(msg)}</p>
-
-          ${
-            solucoes.length
-              ? `
-                <div class="parecer-solucoes-title"><strong>Soluções CE Infinity recomendadas</strong></div>
-                <ul class="parecer-solucoes">
-                  ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-                </ul>
-              `
-              : ""
-          }
-        `;
-        viabilidadeParecerEl.style.display = "block";
+      if (!resp.ok) {
+        const detail = await resp.text();
+        throw new Error(`Erro (${resp.status}): ${detail || "sem detalhes"}`);
       }
 
-      // Cards por área (resumo)
-      Object.entries(data.areas || {}).forEach(([area, resumo]) => {
-        const card = document.createElement("div");
-        card.className = "result-card";
-
-        card.innerHTML = `
-          <h3>${escapeHtml(area)}</h3>
-          <p class="result-score">Pontuação: ${escapeHtml(
-            resumo.total_pontos
-          )} / ${escapeHtml(resumo.pontuacao_maxima)} (${escapeHtml(
-          resumo.percentual
-        )}%)</p>
-          <p class="result-score">Classificação: ${escapeHtml(
-            classificarPercentual(resumo.percentual)
-          )}</p>
-        `;
-
-        resultGrid.appendChild(card);
-      });
+      const data = await resp.json();
+      renderViabilidade(data);
     }
 
-    resultadosSection.style.display = "block";
+    showScreen("resultados");
+    setActiveStep(3);
     btnPdf.style.display = "inline-block";
   } catch (e) {
     console.error(e);
     errorEl.textContent = e?.message || "Erro ao enviar.";
   } finally {
     btnEnviar.disabled = false;
+    btnEnviar.textContent =
+      currentFormType === "diagnostico" ? "Enviar diagnóstico" : "Enviar viabilidade";
   }
 });
 
-// PDF
 btnPdf.addEventListener("click", () => window.print());
+
+btnRefazer.addEventListener("click", () => {
+  resetAll();
+  showScreen("dados");
+  setActiveStep(1);
+});
+
+// ===== init =====
+setupSelector();
+showScreen("dados");
+setActiveStep(1);
