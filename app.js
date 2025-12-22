@@ -1,45 +1,28 @@
-// ===== Helpers =====
 function classificarPercentual(percentual) {
   if (percentual >= 80) return "Alto desempenho";
   if (percentual >= 60) return "Ajuste necessário";
   return "Intervenção crítica";
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function setActiveStep(step) {
-  document.querySelectorAll(".step-chip").forEach((el) => {
-    el.classList.toggle("active", el.getAttribute("data-step") === String(step));
-  });
-}
-
-function showScreen(name) {
-  const screens = ["dados", "perguntas", "resultados"];
-  screens.forEach((s) => {
-    const el = document.getElementById(`screen-${s}`);
-    if (!el) return;
-    el.style.display = s === name ? "block" : "none";
-  });
-}
-
-// ===== API URLs =====
+/* =========================
+   CONFIG
+   ========================= */
 const API_DIAGNOSTICO_URL = "https://ce-infinity.onrender.com/api/diagnostico";
 const API_VIABILIDADE_URL = "https://ce-infinity.onrender.com/api/viabilidade";
 
-// ===== Estado =====
-let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
-let leadEmpresa = null;
-let leadPessoa = null;
+// endpoints para salvar os dados do cliente (lead)
+const API_EMPRESAS_URL = "https://ce-infinity.onrender.com/api/empresas";
+const API_PESSOAS_URL = "https://ce-infinity.onrender.com/api/pessoas";
 
-// ===== Perguntas (mantive as que você já tinha) =====
-const AREAS_DIAGNOSTICO = {
+let currentFormType = "diagnostico"; // 'diagnostico' | 'viabilidade'
+
+// guarda o lead criado (a API deve retornar pelo menos um id)
+let currentLead = null; // { type: 'empresa'|'pessoa', id, data }
+
+/* =========================
+   PERGUNTAS
+   ========================= */
+const DIAGNOSTICO_AREAS = {
   Marketing: [
     "Sua empresa tem metas de vendas mensais e acompanha os resultados?",
     "Existe uma estratégia de marketing digital ativa (redes sociais, anúncios, e-mail etc.)?",
@@ -84,7 +67,7 @@ const AREAS_DIAGNOSTICO = {
   ],
 };
 
-const AREAS_VIABILIDADE = {
+const VIABILIDADE_AREAS = {
   "Problema e oportunidade": [
     "Você consegue explicar claramente qual problema seu negócio pretende resolver?",
     "Esse problema afeta um público numeroso ou relevante?",
@@ -122,78 +105,339 @@ const AREAS_VIABILIDADE = {
   ],
 };
 
-// Respostas 2/1/0 (como suas APIs estão hoje)
+// ambos usam 0/1/2 conforme você padronizou na API
 const ANSWER_OPTIONS = [
   { label: "Sim", value: 2 },
   { label: "Não", value: 1 },
   { label: "Não sei", value: 0 },
 ];
 
-// ===== DOM =====
-const formPerguntasEl = document.getElementById("diagnostico-form");
-const errorEl = document.getElementById("error");
-const resultGrid = document.getElementById("result-grid");
+/* =========================
+   DOM
+   ========================= */
+const formEl = document.getElementById("diagnostico-form");
 const btnEnviar = document.getElementById("btn-enviar");
+const errorEl = document.getElementById("error");
+
+const resultadosSection = document.getElementById("resultados");
+const resultadosTitleEl = document.getElementById("resultados-title");
+const resultGrid = document.getElementById("result-grid");
 const btnPdf = document.getElementById("btn-pdf");
-const btnRefazer = document.getElementById("btn-refazer");
-
-const formEmpresa = document.getElementById("form-empresa");
-const formPessoa = document.getElementById("form-pessoa");
-
-const btnAvancarEmpresa = document.getElementById("btn-avancar-dados");
-const btnAvancarPessoa = document.getElementById("btn-avancar-dados-pessoa");
-const btnVoltarDados = document.getElementById("btn-voltar-dados");
 
 const diagnosticoParecerEl = document.getElementById("diagnostico-parecer");
 const viabilidadeParecerEl = document.getElementById("viabilidade-parecer");
 
-const resultadosTitle = document.getElementById("resultados-title");
+const leadSectionEl = document.getElementById("lead-section");
+const leadTitleEl = document.getElementById("lead-title");
+const leadSubtitleEl = document.getElementById("lead-subtitle");
+const leadFormEl = document.getElementById("lead-form");
 
-// ===== Selector =====
-function setupSelector() {
-  const buttons = document.querySelectorAll(".selector-btn");
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const formType = btn.getAttribute("data-form");
-      if (!formType || formType === currentFormType) return;
+const pageTitleEl = document.getElementById("page-title");
+const pageSubtitleEl = document.getElementById("page-subtitle");
 
-      currentFormType = formType;
-
-      buttons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      // alterna forms de dados
-      if (currentFormType === "diagnostico") {
-        formEmpresa.style.display = "block";
-        formPessoa.style.display = "none";
-      } else {
-        formEmpresa.style.display = "none";
-        formPessoa.style.display = "block";
-      }
-
-      // reseta estado e vai para "dados"
-      resetAll();
-      showScreen("dados");
-      setActiveStep(1);
-    });
-  });
-}
-
-// ===== Render perguntas =====
+/* =========================
+   HELPERS
+   ========================= */
 function getAreas() {
-  return currentFormType === "diagnostico" ? AREAS_DIAGNOSTICO : AREAS_VIABILIDADE;
+  return currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
 }
 
-function renderPerguntas() {
-  formPerguntasEl.innerHTML = "";
+function resetResultados() {
+  resultadosSection.style.display = "none";
+  resultGrid.innerHTML = "";
+  btnPdf.style.display = "none";
+
+  diagnosticoParecerEl.style.display = "none";
+  diagnosticoParecerEl.innerHTML = "";
+
+  viabilidadeParecerEl.style.display = "none";
+  viabilidadeParecerEl.innerHTML = "";
+}
+
+function updateHeaderTexts() {
+  if (currentFormType === "diagnostico") {
+    pageTitleEl.textContent = "Diagnóstico Empresarial CE Infinity";
+    pageSubtitleEl.textContent =
+      "Responda às perguntas de cada área para receber os feedbacks personalizados.";
+    resultadosTitleEl.textContent = "Resultados por área";
+
+    leadTitleEl.textContent = "Dados da empresa";
+    leadSubtitleEl.textContent =
+      "Preencha os dados abaixo para receber o diagnóstico.";
+    btnEnviar.textContent = "Enviar diagnóstico";
+  } else {
+    pageTitleEl.textContent = "Viabilidade de Novas Ideias CE Infinity";
+    pageSubtitleEl.textContent =
+      "Responda às perguntas para receber o parecer de maturidade da sua ideia.";
+    resultadosTitleEl.textContent = "Resultados por área (resumo)";
+
+    leadTitleEl.textContent = "Dados pessoais";
+    leadSubtitleEl.textContent =
+      "Preencha seus dados para receber o parecer da viabilidade.";
+    btnEnviar.textContent = "Enviar viabilidade";
+  }
+}
+
+function renderLeadForm() {
+  if (!leadSectionEl || !leadFormEl || !leadTitleEl || !leadSubtitleEl) return;
+
+  // reset do lead quando muda o tipo
+  currentLead = null;
+
+  leadFormEl.innerHTML = "";
+
+  const grid = document.createElement("div");
+  grid.className = "lead-grid";
+
+  const mkField = ({
+    id,
+    label,
+    type = "text",
+    required = true,
+    full = false,
+    kind = "input", // input | select
+    options = [],
+    hint = "",
+    placeholder = "",
+  }) => {
+    const wrap = document.createElement("div");
+    wrap.className = "lead-field" + (full ? " full" : "");
+    wrap.dataset.fieldId = id;
+
+    const lab = document.createElement("label");
+    lab.setAttribute("for", id);
+    lab.textContent = label + (required ? " *" : "");
+    wrap.appendChild(lab);
+
+    let control;
+
+    if (kind === "select") {
+      const sel = document.createElement("select");
+      sel.id = id;
+      sel.name = id;
+      if (required) sel.required = true;
+
+      // placeholder
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "Selecione...";
+      opt0.disabled = true;
+      opt0.selected = true;
+      sel.appendChild(opt0);
+
+      options.forEach((o) => {
+        const opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+      });
+
+      control = sel;
+    } else {
+      const inp = document.createElement("input");
+      inp.type = type;
+      inp.id = id;
+      inp.name = id;
+      inp.placeholder = placeholder || "";
+      if (required) inp.required = true;
+      control = inp;
+    }
+
+    wrap.appendChild(control);
+
+    if (hint) {
+      const small = document.createElement("small");
+      small.textContent = hint;
+      wrap.appendChild(small);
+    }
+
+    return wrap;
+  };
+
+  if (currentFormType === "diagnostico") {
+    const fields = [
+      { id: "empresa_nome", label: "Nome da empresa", full: true },
+      { id: "empresa_responsavel", label: "Nome do responsável", full: true },
+      { id: "empresa_email", label: "Email", type: "email" },
+      { id: "empresa_whatsapp", label: "WhatsApp", hint: "Ex.: (71) 9xxxx-xxxx" },
+      { id: "empresa_cidade", label: "Cidade" },
+      { id: "empresa_estado", label: "Estado (UF)", placeholder: "Ex.: BA" },
+      {
+        id: "empresa_segmento",
+        label: "Segmento",
+        kind: "select",
+        options: [
+          { label: "Comércio", value: "comercio" },
+          { label: "Serviços", value: "servicos" },
+          { label: "Franquia", value: "franquia" },
+        ],
+      },
+      { id: "empresa_tipo_negocio", label: "Tipo de negócio", full: true, required: false },
+      {
+        id: "empresa_porte",
+        label: "Porte da empresa",
+        kind: "select",
+        options: [
+          { label: "ME", value: "ME" },
+          { label: "EPP", value: "EPP" },
+          { label: "PME", value: "PME" },
+        ],
+      },
+      { id: "empresa_faturamento", label: "Faturamento estimado", required: false, hint: "Ex.: R$ 50.000/mês" },
+      { id: "empresa_unidades", label: "Número de unidades (se franquia)", type: "number", required: false },
+      { id: "empresa_colaboradores", label: "Número de colaboradores", type: "number", required: false },
+      { id: "empresa_tempo_operacao", label: "Tempo de operação", required: false, full: true, hint: "Ex.: 2 anos" },
+    ];
+
+    fields.forEach((f) => grid.appendChild(mkField(f)));
+  } else {
+    const fields = [
+      { id: "pessoa_nome", label: "Nome completo", full: true },
+      { id: "pessoa_email", label: "Email", type: "email" },
+      { id: "pessoa_whatsapp", label: "WhatsApp", hint: "Ex.: (71) 9xxxx-xxxx" },
+      { id: "pessoa_cidade", label: "Cidade" },
+      { id: "pessoa_estado", label: "Estado (UF)", placeholder: "Ex.: BA" },
+      { id: "pessoa_profissao", label: "Profissão atual", full: true, required: false },
+      {
+        id: "pessoa_empreende",
+        label: "Já empreende?",
+        kind: "select",
+        options: [
+          { label: "Sim", value: "sim" },
+          { label: "Não", value: "nao" },
+        ],
+        required: false,
+      },
+      {
+        id: "pessoa_tipo_negocio",
+        label: "Tipo de negócio desejado",
+        kind: "select",
+        options: [
+          { label: "Comércio", value: "comercio" },
+          { label: "Serviço", value: "servico" },
+        ],
+        required: false,
+      },
+      {
+        id: "pessoa_ideia",
+        label: "Ideia própria ou franquia",
+        kind: "select",
+        options: [
+          { label: "Ideia própria", value: "ideia_propria" },
+          { label: "Franquia", value: "franquia" },
+        ],
+        required: false,
+      },
+      { id: "pessoa_investimento", label: "Previsão de investimento", required: false, hint: "Ex.: R$ 30.000" },
+      { id: "pessoa_prazo", label: "Prazo para abrir o negócio", full: true, required: false },
+    ];
+
+    fields.forEach((f) => grid.appendChild(mkField(f)));
+  }
+
+  leadFormEl.appendChild(grid);
+
+  // regra: mostrar/ocultar unidades baseado em franquia
+  const segmentoEl = document.getElementById("empresa_segmento");
+  const unidadesEl = document.getElementById("empresa_unidades");
+  if (segmentoEl && unidadesEl) {
+    const toggle = () => {
+      const isFranquia = String(segmentoEl.value || "") === "franquia";
+      unidadesEl.closest(".lead-field")?.classList.toggle("is-hidden", !isFranquia);
+    };
+    toggle();
+    segmentoEl.addEventListener("change", toggle);
+  }
+}
+
+async function ensureLeadSaved() {
+  if (currentLead?.id) return currentLead;
+  if (!leadFormEl) return null;
+
+  const formOk = leadFormEl.checkValidity();
+  if (!formOk) {
+    leadFormEl.reportValidity();
+    throw new Error(
+      currentFormType === "diagnostico"
+        ? "Preencha os dados da empresa antes de enviar o diagnóstico."
+        : "Preencha os dados pessoais antes de enviar a viabilidade."
+    );
+  }
+
+  const payload = {};
+
+  if (currentFormType === "diagnostico") {
+    payload.nome_empresa = document.getElementById("empresa_nome")?.value?.trim() || "";
+    payload.nome_responsavel = document.getElementById("empresa_responsavel")?.value?.trim() || "";
+    payload.email = document.getElementById("empresa_email")?.value?.trim() || "";
+    payload.whatsapp = document.getElementById("empresa_whatsapp")?.value?.trim() || "";
+    payload.cidade = document.getElementById("empresa_cidade")?.value?.trim() || "";
+    payload.estado = document.getElementById("empresa_estado")?.value?.trim() || "";
+    payload.segmento = document.getElementById("empresa_segmento")?.value || "";
+    payload.tipo_negocio = document.getElementById("empresa_tipo_negocio")?.value?.trim() || "";
+    payload.porte = document.getElementById("empresa_porte")?.value || "";
+    payload.faturamento_estimado = document.getElementById("empresa_faturamento")?.value?.trim() || "";
+    const unidades = document.getElementById("empresa_unidades")?.value;
+    payload.numero_unidades = unidades ? Number(unidades) : null;
+    payload.numero_colaboradores = Number(document.getElementById("empresa_colaboradores")?.value || 0);
+    payload.tempo_operacao = document.getElementById("empresa_tempo_operacao")?.value?.trim() || "";
+
+    const resp = await fetch(API_EMPRESAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) {
+      const detail = await resp.text();
+      throw new Error(`Erro ao salvar empresa (${resp.status}): ${detail || "sem detalhes"}`);
+    }
+
+    const data = await resp.json();
+    currentLead = { type: "empresa", id: data.id ?? data.empresa_id ?? null, data };
+    return currentLead;
+  }
+
+  payload.nome_completo = document.getElementById("pessoa_nome")?.value?.trim() || "";
+  payload.email = document.getElementById("pessoa_email")?.value?.trim() || "";
+  payload.whatsapp = document.getElementById("pessoa_whatsapp")?.value?.trim() || "";
+  payload.cidade = document.getElementById("pessoa_cidade")?.value?.trim() || "";
+  payload.estado = document.getElementById("pessoa_estado")?.value?.trim() || "";
+  payload.profissao_atual = document.getElementById("pessoa_profissao")?.value?.trim() || "";
+  payload.ja_empreende = document.getElementById("pessoa_empreende")?.value || "";
+  payload.tipo_negocio_desejado = document.getElementById("pessoa_tipo_negocio")?.value || "";
+  payload.ideia_propria_ou_franquia = document.getElementById("pessoa_ideia")?.value || "";
+  payload.previsao_investimento = document.getElementById("pessoa_investimento")?.value?.trim() || "";
+  payload.prazo_para_abrir = document.getElementById("pessoa_prazo")?.value?.trim() || "";
+
+  const resp = await fetch(API_PESSOAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const detail = await resp.text();
+    throw new Error(`Erro ao salvar pessoa (${resp.status}): ${detail || "sem detalhes"}`);
+  }
+
+  const data = await resp.json();
+  currentLead = { type: "pessoa", id: data.id ?? data.pessoa_id ?? null, data };
+  return currentLead;
+}
+
+function renderForm() {
+  formEl.innerHTML = "";
+  errorEl.textContent = "";
+  resetResultados();
 
   Object.entries(getAreas()).forEach(([area, perguntas]) => {
-    const areaCard = document.createElement("section");
-    areaCard.className = "area-card";
+    const card = document.createElement("section");
+    card.className = "area-card";
 
     const h2 = document.createElement("h2");
     h2.textContent = area;
-    areaCard.appendChild(h2);
+    card.appendChild(h2);
 
     const ol = document.createElement("ol");
     ol.className = "question-list";
@@ -227,310 +471,212 @@ function renderPerguntas() {
       ol.appendChild(li);
     });
 
-    areaCard.appendChild(ol);
-    formPerguntasEl.appendChild(areaCard);
+    card.appendChild(ol);
+    formEl.appendChild(card);
   });
 }
 
-// ===== Coleta lead =====
-function readForm(formEl) {
-  const fd = new FormData(formEl);
-  const obj = {};
-  for (const [k, v] of fd.entries()) obj[k] = String(v).trim();
-  return obj;
+/* =========================
+   ✅ SELETOR DE FORMULÁRIO
+   ========================= */
+function setupFormSelector() {
+  const selectorButtons = document.querySelectorAll(".selector-btn");
+  if (!selectorButtons.length) return;
+
+  selectorButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const formType = btn.getAttribute("data-form");
+      if (!formType || formType === currentFormType) return;
+
+      currentFormType = formType;
+
+      selectorButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      updateHeaderTexts();
+      renderForm();
+      renderLeadForm();
+    });
+  });
 }
 
-function validateEmpresa(empresa) {
-  const required = [
-    "nome_empresa",
-    "nome_responsavel",
-    "email",
-    "whatsapp",
-    "cidade",
-    "estado",
-    "segmento",
-    "tipo_negocio",
-    "porte_empresa",
-    "faturamento_estimado",
-    "numero_colaboradores",
-    "tempo_operacao",
-  ];
+// init
+setupFormSelector();
+updateHeaderTexts();
+renderForm();
+renderLeadForm();
 
-  for (const k of required) {
-    if (!empresa[k]) return `Preencha o campo obrigatório: ${k.replaceAll("_", " ")}`;
-  }
-
-  if (empresa.estado.length !== 2) return "Estado deve ter 2 letras (ex: BA).";
-
-  if (empresa.segmento === "franquia" && !empresa.numero_unidades) {
-    return "Número de unidades é obrigatório quando segmento = Franquia.";
-  }
-
-  return null;
-}
-
-function validatePessoa(pessoa) {
-  const required = [
-    "nome_completo",
-    "email",
-    "whatsapp",
-    "cidade",
-    "estado",
-    "profissao_atual",
-    "ja_empreende",
-    "tipo_negocio_desejado",
-    "ideia",
-    "previsao_investimento",
-    "prazo_para_abrir",
-  ];
-
-  for (const k of required) {
-    if (!pessoa[k]) return `Preencha o campo obrigatório: ${k.replaceAll("_", " ")}`;
-  }
-
-  if (pessoa.estado.length !== 2) return "Estado deve ter 2 letras (ex: BA).";
-  return null;
-}
-
-// ===== Navegação =====
-btnAvancarEmpresa.addEventListener("click", () => {
+/* =========================
+   ENVIO
+   ========================= */
+btnEnviar.addEventListener("click", async () => {
   errorEl.textContent = "";
+  resetResultados();
 
-  const empresa = readForm(formEmpresa);
-  const err = validateEmpresa(empresa);
-  if (err) {
-    alert(err);
+  // 1) salva os dados do cliente (empresa/pessoa) antes de calcular
+  try {
+    await ensureLeadSaved();
+  } catch (e) {
+    errorEl.textContent = e?.message || "Preencha os dados antes de enviar.";
     return;
   }
 
-  // normaliza números
-  empresa.numero_unidades =
-    empresa.numero_unidades ? Number(empresa.numero_unidades) : null;
-  empresa.numero_colaboradores = Number(empresa.numero_colaboradores);
-
-  leadEmpresa = empresa;
-
-  renderPerguntas();
-  showScreen("perguntas");
-  setActiveStep(2);
-
-  btnEnviar.textContent = "Enviar diagnóstico";
-});
-
-btnAvancarPessoa.addEventListener("click", () => {
-  errorEl.textContent = "";
-
-  const pessoa = readForm(formPessoa);
-  const err = validatePessoa(pessoa);
-  if (err) {
-    alert(err);
-    return;
-  }
-
-  leadPessoa = pessoa;
-
-  renderPerguntas();
-  showScreen("perguntas");
-  setActiveStep(2);
-
-  btnEnviar.textContent = "Enviar viabilidade";
-});
-
-btnVoltarDados.addEventListener("click", () => {
-  showScreen("dados");
-  setActiveStep(1);
-});
-
-// ===== Envio perguntas =====
-function montarRespostas() {
   const respostas = {};
   const areas = getAreas();
 
   for (const [area, perguntas] of Object.entries(areas)) {
-    respostas[area] = [];
+    const pontos = [];
+
     for (let i = 0; i < perguntas.length; i++) {
       const name = `${area}__${i}`;
       const checked = document.querySelector(
         `input[name="${CSS.escape(name)}"]:checked`
       );
-      if (!checked) return { error: "Responda todas as perguntas antes de enviar." };
-      respostas[area].push(Number(checked.value));
+
+      if (!checked) {
+        errorEl.textContent =
+          "Responda todas as perguntas antes de enviar.";
+        return;
+      }
+
+      pontos.push(Number(checked.value));
     }
-  }
 
-  return { respostas };
-}
-
-function resetAll() {
-  errorEl.textContent = "";
-  resultGrid.innerHTML = "";
-  btnPdf.style.display = "none";
-  if (diagnosticoParecerEl) {
-    diagnosticoParecerEl.style.display = "none";
-    diagnosticoParecerEl.innerHTML = "";
-  }
-  if (viabilidadeParecerEl) {
-    viabilidadeParecerEl.style.display = "none";
-    viabilidadeParecerEl.innerHTML = "";
-  }
-}
-
-async function postJson(url, body) {
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return resp;
-}
-
-function renderDiagnostico(data) {
-  // título
-  resultadosTitle.textContent = "Resultados por área";
-
-  // parecer global (vem da API)
-  const fg = data?.global?.feedback_global;
-  const percentualGlobal = data?.global?.percentual;
-
-  if (fg && diagnosticoParecerEl) {
-    const solucoes = Array.isArray(fg.solucoes) ? fg.solucoes : [];
-    diagnosticoParecerEl.innerHTML = `
-      <h3 class="parecer-title">Parecer global — ${escapeHtml(fg.titulo || "Feedback global")}</h3>
-      <div class="parecer-range">Percentual global: ${escapeHtml(percentualGlobal)}%</div>
-      <p class="parecer-msg">${escapeHtml(fg.mensagem || "")}</p>
-      ${
-        solucoes.length
-          ? `
-            <div class="parecer-solucoes-title"><strong>Soluções Recomendadas</strong></div>
-            <ul class="parecer-solucoes">
-              ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-            </ul>
-          `
-          : ""
-      }
-    `;
-    diagnosticoParecerEl.style.display = "block";
-  }
-
-  // cards por área
-  Object.entries(data.areas || {}).forEach(([area, res]) => {
-    const card = document.createElement("div");
-    card.className = "result-card";
-    card.innerHTML = `
-      <h3>${escapeHtml(area)}</h3>
-      <p class="result-score">Pontuação: ${escapeHtml(res.total_pontos)} / ${escapeHtml(
-      res.pontuacao_maxima
-    )} (${escapeHtml(res.percentual)}%)</p>
-      <p class="result-score">Classificação: ${escapeHtml(classificarPercentual(res.percentual))}</p>
-      <p class="result-message">${escapeHtml(res.mensagem)}</p>
-    `;
-    resultGrid.appendChild(card);
-  });
-}
-
-function renderViabilidade(data) {
-  resultadosTitle.textContent = "Resultado";
-
-  const pg = data.parecer_global;
-  if (pg && viabilidadeParecerEl) {
-    const rawMsg = String(pg.mensagem || data.mensagem || "");
-    // evita duplicar bloco de soluções
-    const msg = rawMsg.split("Soluções CE Infinity recomendadas:")[0].trim();
-    const solucoes = Array.isArray(pg.solucoes) ? pg.solucoes : [];
-
-    viabilidadeParecerEl.innerHTML = `
-      <h3 class="parecer-title">Parecer global — ${escapeHtml(pg.classificacao || "Parecer global")}</h3>
-      <div class="parecer-range">Maturidade: ${escapeHtml(data.percentual_maturidade)}%</div>
-      <p class="parecer-msg">${escapeHtml(msg)}</p>
-      ${
-        solucoes.length
-          ? `
-            <div class="parecer-solucoes-title"><strong>Soluções CE Infinity recomendadas</strong></div>
-            <ul class="parecer-solucoes">
-              ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-            </ul>
-          `
-          : ""
-      }
-    `;
-    viabilidadeParecerEl.style.display = "block";
-  }
-
-  // cards por área
-  Object.entries(data.areas || {}).forEach(([area, resumo]) => {
-    const card = document.createElement("div");
-    card.className = "result-card";
-    card.innerHTML = `
-      <h3>${escapeHtml(area)}</h3>
-      <p class="result-score">Pontuação: ${escapeHtml(resumo.total_pontos)} / ${escapeHtml(
-      resumo.pontuacao_maxima
-    )} (${escapeHtml(resumo.percentual)}%)</p>
-      <p class="result-score">Classificação: ${escapeHtml(classificarPercentual(resumo.percentual))}</p>
-    `;
-    resultGrid.appendChild(card);
-  });
-}
-
-btnEnviar.addEventListener("click", async () => {
-  errorEl.textContent = "";
-  resultGrid.innerHTML = "";
-  resetAll();
-
-  const { respostas, error } = montarRespostas();
-  if (error) {
-    errorEl.textContent = error;
-    return;
+    respostas[area] = pontos;
   }
 
   btnEnviar.disabled = true;
   btnEnviar.textContent = "Enviando...";
 
   try {
-    if (currentFormType === "diagnostico") {
-      // tenta enviar no formato novo (empresa + respostas)
-      const bodyNovo = { empresa: leadEmpresa, respostas };
+    const url =
+      currentFormType === "diagnostico"
+        ? API_DIAGNOSTICO_URL
+        : API_VIABILIDADE_URL;
 
-      let resp = await postJson(API_DIAGNOSTICO_URL, bodyNovo);
+    const body =
+      currentFormType === "diagnostico"
+        ? respostas
+        : { respostas };
 
-      // fallback: API antiga espera só { "Marketing": [...] }
-      if (!resp.ok) {
-        const bodyAntigo = respostas; // dict direto por área
-        resp = await postJson(API_DIAGNOSTICO_URL, bodyAntigo);
-      }
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-      if (!resp.ok) {
-        const detail = await resp.text();
-        throw new Error(`Erro (${resp.status}): ${detail || "sem detalhes"}`);
-      }
-
-      const data = await resp.json();
-      renderDiagnostico(data);
-    } else {
-      // viabilidade: tenta enviar no formato novo (pessoa + respostas)
-      const bodyNovo = { pessoa: leadPessoa, respostas: respostas };
-      let resp = await postJson(API_VIABILIDADE_URL, bodyNovo);
-
-      // fallback: API antiga espera { respostas: {...} }
-      if (!resp.ok) {
-        const bodyAntigo = { respostas };
-        resp = await postJson(API_VIABILIDADE_URL, bodyAntigo);
-      }
-
-      if (!resp.ok) {
-        const detail = await resp.text();
-        throw new Error(`Erro (${resp.status}): ${detail || "sem detalhes"}`);
-      }
-
-      const data = await resp.json();
-      renderViabilidade(data);
+    if (!resp.ok) {
+      const detail = await resp.text();
+      throw new Error(`Erro ao chamar API (${resp.status}): ${detail || "sem detalhes"}`);
     }
 
-    showScreen("resultados");
-    setActiveStep(3);
+    const data = await resp.json();
+
+    resultGrid.innerHTML = "";
+
+    if (currentFormType === "diagnostico") {
+      // cards por área
+      Object.entries(data.areas || {}).forEach(([area, res]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+
+        const h3 = document.createElement("h3");
+        h3.textContent = area;
+        card.appendChild(h3);
+
+        const pScore = document.createElement("p");
+        pScore.className = "result-score";
+        pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
+        card.appendChild(pScore);
+
+        const classificacao = classificarPercentual(res.percentual);
+
+        const pClass = document.createElement("p");
+        pClass.className = "result-score";
+        pClass.textContent = `Classificação: ${classificacao}`;
+        card.appendChild(pClass);
+
+        const pMsg = document.createElement("p");
+        pMsg.className = "result-message";
+        pMsg.textContent = res.mensagem;
+        card.appendChild(pMsg);
+
+        resultGrid.appendChild(card);
+      });
+
+      // parecer global do diagnóstico (se existir)
+      if (data.parecer_global) {
+        const pg = data.parecer_global;
+        const frag = Array.isArray(pg.setores_criticos) ? pg.setores_criticos : [];
+
+        diagnosticoParecerEl.innerHTML = `
+          <h3>Parecer global — ${pg.classificacao}</h3>
+          <p class="parecer-meta">
+            Faixa: ${pg.min_percentual}% a ${pg.max_percentual}% • Desempenho global: ${data.percentual_global}%
+          </p>
+          <p style="white-space: pre-wrap; margin: 0.25rem 0 0;">${pg.mensagem}</p>
+          ${
+            frag.length
+              ? `<p class="parecer-meta" style="margin-top:0.6rem"><strong>Áreas mais frágeis:</strong> ${frag.join(", ")}</p>`
+              : ""
+          }
+        `;
+        diagnosticoParecerEl.style.display = "block";
+      }
+    } else {
+      // resumo por área da viabilidade
+      const areasResumo = data.areas || {};
+      Object.entries(areasResumo).forEach(([area, res]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+
+        const h3 = document.createElement("h3");
+        h3.textContent = area;
+        card.appendChild(h3);
+
+        const pScore = document.createElement("p");
+        pScore.className = "result-score";
+        pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
+        card.appendChild(pScore);
+
+        resultGrid.appendChild(card);
+      });
+
+      // parecer global da viabilidade
+      if (data.parecer_global) {
+        const pg = data.parecer_global;
+
+        const solucoes = Array.isArray(pg.solucoes) ? pg.solucoes : [];
+        const solucoesHtml =
+          solucoes.length > 0
+            ? `<div style="margin-top:0.75rem">
+                 <div class="parecer-meta" style="margin-bottom:0.35rem"><strong>Soluções CE Infinity recomendadas</strong></div>
+                 <ul style="margin:0; padding-left:1.2rem">
+                   ${solucoes.map((s) => `<li>${s}</li>`).join("")}
+                 </ul>
+               </div>`
+            : "";
+
+        // IMPORTANTe: não repetimos as soluções se elas já estiverem dentro da mensagem
+        const mensagem = String(pg.mensagem || "");
+
+        viabilidadeParecerEl.innerHTML = `
+          <h3>Parecer global — ${pg.classificacao}</h3>
+          <p class="parecer-meta">
+            Faixa: ${pg.min_percentual}% a ${pg.max_percentual}% • Maturidade: ${data.percentual_maturidade}%
+          </p>
+          <p style="white-space: pre-wrap; margin: 0.25rem 0 0;">${mensagem}</p>
+          ${mensagem.toLowerCase().includes("soluções ce infinity recomendadas") ? "" : solucoesHtml}
+        `;
+        viabilidadeParecerEl.style.display = "block";
+      }
+    }
+
+    resultadosSection.style.display = "block";
     btnPdf.style.display = "inline-block";
-  } catch (e) {
-    console.error(e);
-    errorEl.textContent = e?.message || "Erro ao enviar.";
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = err.message || "Erro ao enviar.";
   } finally {
     btnEnviar.disabled = false;
     btnEnviar.textContent =
@@ -538,15 +684,7 @@ btnEnviar.addEventListener("click", async () => {
   }
 });
 
-btnPdf.addEventListener("click", () => window.print());
-
-btnRefazer.addEventListener("click", () => {
-  resetAll();
-  showScreen("dados");
-  setActiveStep(1);
+// Baixar PDF (impressão)
+btnPdf.addEventListener("click", () => {
+  window.print();
 });
-
-// ===== init =====
-setupSelector();
-showScreen("dados");
-setActiveStep(1);

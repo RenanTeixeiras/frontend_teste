@@ -2,315 +2,77 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>CE Infinity • Diagnóstico & Viabilidade</title>
+    <title>Diagnósticos CE Infinity</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <link rel="stylesheet" href="./style.css" />
   </head>
-
   <body>
-    <!-- Header estilo CE Infinity -->
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <!-- Troque por uma imagem real quando quiser -->
-          <div class="brand-mark">CE</div>
-          <div class="brand-text">
-            <div class="brand-name">CE INFINITY</div>
-            <div class="brand-sub">CONSULTORIA EMPRESARIAL</div>
-          </div>
+    <div class="container">
+      <header>
+        <h1 id="page-title">Diagnóstico Empresarial CE Infinity</h1>
+        <p class="subtitle" id="page-subtitle">
+          Responda às perguntas de cada área para receber os feedbacks
+          personalizados.
+        </p>
+      </header>
+
+      <div class="form-selector">
+        <span class="form-selector-label">
+          Qual diagnóstico você deseja realizar?
+        </span>
+
+        <div class="form-selector-buttons">
+          <button type="button" class="selector-btn active" data-form="diagnostico">
+            Diagnóstico Empresarial
+          </button>
+
+          <button type="button" class="selector-btn" data-form="viabilidade">
+            Viabilidade de Novas Ideias
+          </button>
         </div>
-
-        <nav class="nav">
-          <a href="#" class="nav-link">Home</a>
-          <a href="#" class="nav-link">Serviços</a>
-          <a href="#" class="nav-link">Produtos</a>
-          <a href="#" class="nav-link">Dicas</a>
-          <a href="#" class="nav-link">Sobre nós</a>
-          <a href="#" class="nav-link">Contato</a>
-        </nav>
-
-        <a class="nav-cta" href="#" target="_blank" rel="noreferrer">
-          Agendar consultoria
-        </a>
       </div>
-    </header>
 
-    <main class="page">
-      <!-- Hero -->
-      <section class="hero">
-        <div class="hero-inner">
-          <div class="hero-kpis">
-            <div class="kpi">
-              <div class="kpi-num">+15</div>
-              <div class="kpi-label">anos de mercado</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-num">+100</div>
-              <div class="kpi-label">clientes satisfeitos</div>
-            </div>
-          </div>
+      <!-- ===== Dados do cliente (lead) ===== -->
+      <section id="lead-section" class="area-card lead-card">
+        <h2 id="lead-title">Dados da empresa</h2>
+        <p class="subtitle" id="lead-subtitle">
+          Preencha os dados abaixo para receber o diagnóstico.
+        </p>
 
-          <div class="hero-quote">
-            <div class="quote-mark">“</div>
-            <p>
-              Desde 2007, a CE Infinity vem promovendo a transformação das
-              empresas de diversos portes e segmentos no Brasil.
-            </p>
-            <strong>Carlos Escobar, CEO</strong>
-          </div>
-        </div>
+        <form id="lead-form" autocomplete="on">
+          <!-- Campos são renderizados via JS -->
+        </form>
       </section>
 
-      <!-- Conteúdo -->
-      <section class="container">
-        <div class="section-title">
-          <div class="section-eyebrow">SERVIÇOS</div>
-          <h1 id="page-title">Conheça nossas soluções</h1>
-          <p id="page-subtitle">
-            Temos soluções, sob medida, para viabilizar uma ideia que está no papel
-            em realidade ou para transformar uma empresa que está em operação.
-          </p>
-        </div>
+      <form id="diagnostico-form"></form>
 
-        <!-- Seletor tipo formulário -->
-        <div class="selector">
-          <button class="selector-btn active" data-form="diagnostico" type="button">
-            Em operação
-          </button>
-          <button class="selector-btn" data-form="viabilidade" type="button">
-            Novo negócio
+      <div class="actions">
+        <button type="button" class="primary" id="btn-enviar">
+          Enviar diagnóstico
+        </button>
+      </div>
+
+      <div id="error" class="error"></div>
+
+      <section id="resultados" class="resultados" style="display: none">
+        <div class="resultados-header">
+          <h2 id="resultados-title">Resultados por área</h2>
+          <button type="button" id="btn-pdf" class="primary" style="display: none">
+            Baixar PDF
           </button>
         </div>
 
-        <!-- Stepper simples -->
-        <div class="steps">
-          <div class="step-chip active" data-step="1">1. Dados</div>
-          <div class="step-chip" data-step="2">2. Perguntas</div>
-          <div class="step-chip" data-step="3">3. Resultado</div>
-        </div>
+        <!-- Parecer global (Diagnóstico Empresarial) -->
+        <div id="diagnostico-parecer" class="parecer-card" style="display: none"></div>
 
-        <!-- Tela 1: Dados -->
-        <section id="screen-dados" class="screen">
-          <!-- Form Empresa (Diagnóstico) -->
-          <form id="form-empresa" class="card">
-            <h2 class="card-title">Dados da empresa</h2>
-            <p class="card-sub">
-              Preencha para que possamos vincular o diagnóstico à sua empresa.
-            </p>
+        <!-- Parecer global (Viabilidade) -->
+        <div id="viabilidade-parecer" class="parecer-card" style="display: none"></div>
 
-            <div class="grid">
-              <div class="field">
-                <label>Nome da empresa</label>
-                <input name="nome_empresa" type="text" placeholder="Ex: CE Infinity" required />
-              </div>
-
-              <div class="field">
-                <label>Nome do responsável</label>
-                <input name="nome_responsavel" type="text" placeholder="Ex: Carlos Escobar" required />
-              </div>
-
-              <div class="field">
-                <label>E-mail</label>
-                <input name="email" type="email" placeholder="email@empresa.com" required />
-              </div>
-
-              <div class="field">
-                <label>WhatsApp</label>
-                <input name="whatsapp" type="text" placeholder="(DDD) 9xxxx-xxxx" required />
-              </div>
-
-              <div class="field">
-                <label>Cidade</label>
-                <input name="cidade" type="text" placeholder="Ex: Salvador" required />
-              </div>
-
-              <div class="field">
-                <label>Estado</label>
-                <input name="estado" type="text" maxlength="2" placeholder="BA" required />
-              </div>
-
-              <div class="field">
-                <label>Segmento</label>
-                <select name="segmento" required>
-                  <option value="" selected disabled>Selecione…</option>
-                  <option value="comercio">Comércio</option>
-                  <option value="servicos">Serviços</option>
-                  <option value="franquia">Franquia</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Tipo de negócio</label>
-                <input name="tipo_negocio" type="text" placeholder="Ex: Restaurante, Agência…" required />
-              </div>
-
-              <div class="field">
-                <label>Porte da empresa</label>
-                <select name="porte_empresa" required>
-                  <option value="" selected disabled>Selecione…</option>
-                  <option value="ME">ME</option>
-                  <option value="EPP">EPP</option>
-                  <option value="PME">PME</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Faturamento estimado</label>
-                <input name="faturamento_estimado" type="text" placeholder="Ex: 50k/mês" required />
-              </div>
-
-              <div class="field">
-                <label>Nº de unidades (se franquia)</label>
-                <input name="numero_unidades" type="number" min="0" placeholder="Ex: 2" />
-                <small class="hint">Obrigatório se segmento = Franquia</small>
-              </div>
-
-              <div class="field">
-                <label>Nº de colaboradores</label>
-                <input name="numero_colaboradores" type="number" min="0" placeholder="Ex: 10" required />
-              </div>
-
-              <div class="field">
-                <label>Tempo de operação</label>
-                <input name="tempo_operacao" type="text" placeholder="Ex: 3 anos" required />
-              </div>
-            </div>
-
-            <div class="actions">
-              <button type="button" class="primary" id="btn-avancar-dados">
-                Avançar para perguntas
-              </button>
-            </div>
-          </form>
-
-          <!-- Form Pessoa (Viabilidade) -->
-          <form id="form-pessoa" class="card" style="display:none;">
-            <h2 class="card-title">Seus dados</h2>
-            <p class="card-sub">
-              Preencha para que possamos vincular a viabilidade à sua ideia.
-            </p>
-
-            <div class="grid">
-              <div class="field">
-                <label>Nome completo</label>
-                <input name="nome_completo" type="text" placeholder="Seu nome" required />
-              </div>
-
-              <div class="field">
-                <label>E-mail</label>
-                <input name="email" type="email" placeholder="seuemail@gmail.com" required />
-              </div>
-
-              <div class="field">
-                <label>WhatsApp</label>
-                <input name="whatsapp" type="text" placeholder="(DDD) 9xxxx-xxxx" required />
-              </div>
-
-              <div class="field">
-                <label>Cidade</label>
-                <input name="cidade" type="text" placeholder="Ex: Salvador" required />
-              </div>
-
-              <div class="field">
-                <label>Estado</label>
-                <input name="estado" type="text" maxlength="2" placeholder="BA" required />
-              </div>
-
-              <div class="field">
-                <label>Profissão atual</label>
-                <input name="profissao_atual" type="text" placeholder="Ex: Analista, Vendedor…" required />
-              </div>
-
-              <div class="field">
-                <label>Já empreende?</label>
-                <select name="ja_empreende" required>
-                  <option value="" selected disabled>Selecione…</option>
-                  <option value="sim">Sim</option>
-                  <option value="nao">Não</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Tipo de negócio desejado</label>
-                <select name="tipo_negocio_desejado" required>
-                  <option value="" selected disabled>Selecione…</option>
-                  <option value="comercio">Comércio</option>
-                  <option value="servico">Serviço</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Ideia própria ou franquia?</label>
-                <select name="ideia" required>
-                  <option value="" selected disabled>Selecione…</option>
-                  <option value="propria">Ideia própria</option>
-                  <option value="franquia">Franquia</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Previsão de investimento</label>
-                <input name="previsao_investimento" type="text" placeholder="Ex: 20k" required />
-              </div>
-
-              <div class="field">
-                <label>Prazo para abrir o negócio</label>
-                <input name="prazo_para_abrir" type="text" placeholder="Ex: 3 meses" required />
-              </div>
-            </div>
-
-            <div class="actions">
-              <button type="button" class="primary" id="btn-avancar-dados-pessoa">
-                Avançar para perguntas
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <!-- Tela 2: Perguntas -->
-        <section id="screen-perguntas" class="screen" style="display:none;">
-          <form id="diagnostico-form"></form>
-
-          <div class="actions">
-            <button type="button" class="secondary" id="btn-voltar-dados">
-              Voltar
-            </button>
-            <button type="button" class="primary" id="btn-enviar">
-              Enviar
-            </button>
-          </div>
-
-          <div id="error" class="error"></div>
-        </section>
-
-        <!-- Tela 3: Resultados -->
-        <section id="screen-resultados" class="screen" style="display:none;">
-          <div class="resultados card">
-            <div class="resultados-header">
-              <h2 id="resultados-title">Resultados</h2>
-              <button type="button" id="btn-pdf" class="primary" style="display:none;">
-                Baixar PDF
-              </button>
-            </div>
-
-            <!-- Parecer global: diagnóstico -->
-            <div id="diagnostico-parecer" class="parecer" style="display:none;"></div>
-
-            <!-- Parecer global: viabilidade -->
-            <div id="viabilidade-parecer" class="parecer" style="display:none;"></div>
-
-            <div id="result-grid" class="result-grid"></div>
-
-            <div class="actions">
-              <button type="button" class="secondary" id="btn-refazer">
-                Refazer
-              </button>
-            </div>
-          </div>
-        </section>
+        <div id="result-grid" class="result-grid"></div>
       </section>
-    </main>
+    </div>
 
-    <script src="./app.js"></script>
+    <script src="./app.js" defer></script>
   </body>
 </html>
