@@ -17,84 +17,88 @@ const API_PESSOAS = `${API_BASE}/pessoas`;
 ============================ */
 const DIAGNOSTICO_AREAS = {
   "Marketing & Vendas": [
-    "Existe uma estratégia de marketing e vendas definida e em execução?",
-    "A empresa conhece e acompanha seu funil comercial (leads, conversão, ticket médio)?",
-    "Os canais de aquisição e relacionamento com o cliente são bem utilizados?",
-    "O atendimento e pós-venda seguem um padrão de qualidade definido?",
-    "A empresa possui indicadores comerciais e metas acompanhadas regularmente?",
+    "Sua empresa define metas de vendas ou faturamento e acompanha os resultados periodicamente?",
+    "Sua empresa possui ações planejadas para atrair clientes, seja por meios digitais ou tradicionais?",
+    "O atendimento ao cliente e o pós-venda seguem um padrão de qualidade definido pela empresa?",
+    "A empresa acompanha quantos contatos ou interessados se transformam em clientes?",
+    "A empresa possui ações para fidelizar clientes e estimular novas compras ou contratações?",
   ],
   "Operações & Logística": [
-    "A empresa possui processos operacionais padronizados e documentados?",
-    "Existe controle eficiente de estoque ou capacidade de produção/atendimento?",
-    "O ciclo operacional (do pedido à entrega) é medido e otimizado?",
-    "Há monitoramento de perdas, devoluções ou retrabalhos?",
-    "A empresa possui fornecedores e parcerias estratégicas bem gerenciadas?",
+    "A empresa possui processos operacionais definidos e padronizados para executar suas atividades?",
+    "A empresa mantém controle atualizado do que vende ou entrega, seja estoque de produtos ou agenda/capacidade de atendimento?",
+    "A empresa planeja compras ou uso de recursos com base no histórico de vendas, atendimentos ou demanda esperada?",
+    "A empresa analisa perdas, devoluções, cancelamentos ou retrabalhos?",
+    "A empresa acompanha regularmente indicadores financeiros e obrigações fiscais para apoiar a tomada de decisão?",
   ],
   "Financeiro & Fiscal": [
-    "A empresa possui controle de fluxo de caixa (real e projetado)?",
-    "A empresa apura e analisa DRE mensalmente?",
-    "Existe planejamento financeiro e orçamentário anual?",
-    "A precificação é baseada em custos, impostos e margem desejada?",
-    "A empresa acompanha indicadores financeiros e fiscais (inadimplência, impostos, etc.)?",
+    "A empresa controla o fluxo de caixa, acompanhando entradas e saídas futuras e realizadas?",
+    "A empresa acompanha mensalmente o resultado financeiro do negócio (receitas, custos e despesas)?",
+    "A empresa define um orçamento anual e acompanha se os gastos e receitas estão dentro do planejado?",
+    "Os preços dos produtos ou serviços consideram custos, impostos e a margem de lucro desejada?",
+    "A empresa acompanha regularmente indicadores financeiros e obrigações fiscais para apoiar a tomada de decisão?",
   ],
   "Pessoas & Cultura": [
-    "Cargos e responsabilidades estão claramente definidos?",
-    "A empresa realiza treinamentos ou capacitações periódicas?",
-    "Existe avaliação de desempenho ou feedback estruturado?",
-    "O clima organizacional é acompanhado e discutido com a equipe?",
-    "A empresa monitora rotatividade e mantém políticas de retenção?",
+    "As funções e responsabilidades de cada pessoa estão claramente definidas?",
+    "A empresa oferece treinamentos ou orientações para capacitar a equipe no dia a dia?",
+    "A empresa avalia o desempenho da equipe e fornece feedbacks de forma regular?",
+    "A empresa acompanha o clima interno e conversa com a equipe sobre melhorias?",
+    "A empresa acompanha a saída e a troca de colaboradores para entender os motivos?",
   ],
   "Processos & Qualidade": [
-    "A empresa possui manuais, fluxogramas ou rotinas documentadas?",
-    "Existe controle de qualidade e padrões para execução do serviço/produto?",
-    "Os indicadores de desempenho (KPIs) são definidos e acompanhados?",
-    "Há rotina de revisão e melhoria contínua dos processos?",
-    "A empresa realiza auditorias internas ou controles de conformidade?",
+    "Os principais processos da empresa estão documentados ou claramente definidos (mesmo que de forma simples)?",
+    "A tecnologia utilizada ajuda no controle das operações e na produtividade da equipe?",
+    "A empresa acompanha indicadores para medir desempenho, eficiência e resultados?",
+    "A empresa revisa seus processos periodicamente para corrigir falhas e melhorar resultados?",
+    "A empresa revisa e confere suas operações para garantir padrão, qualidade e conformidade?",
   ],
   "Estratégia & Governança": [
-    "A empresa possui planejamento estratégico e metas claras?",
-    "As decisões são tomadas com base em dados e relatórios de desempenho?",
-    "Há acompanhamento periódico de indicadores estratégicos?",
-    "Existe clareza sobre oportunidades de expansão, inovação ou novos produtos?",
-    "A empresa possui governança definida (papéis, sócios, gestão, processos decisórios)?",
+    "A empresa possui objetivos claros e metas definidas para o curto e médio prazo?",
+    "As principais decisões são tomadas com base em dados e informações confiáveis?",
+    "A empresa acompanha indicadores para avaliar se os objetivos estratégicos estão sendo alcançados?",
+    "A empresa tem clareza sobre oportunidades de crescimento, expansão ou inovação?",
+    "As regras de decisão, responsabilidades dos sócios e papéis de liderança estão bem definidos?",
   ],
 };
 
 const VIABILIDADE_AREAS = {
   "Problema & Oportunidade": [
     "Você consegue explicar claramente qual problema seu negócio pretende resolver?",
-    "Esse problema afeta um público numeroso ou relevante?",
+    "Esse problema afeta um número significativo de pessoas ou empresas?",
     "As pessoas afetadas reconhecem que esse problema existe?",
-    "Existem evidências de que esse problema gera demanda por soluções?",
-    "Há tendências favoráveis no mercado relacionadas ao seu negócio?",
+    "Você já identificou sinais de que as pessoas buscam soluções para esse problema?",
+    "O mercado apresenta sinais de crescimento ou oportunidades favoráveis para esse tipo de negócio?",
   ],
+
   "Público-alvo & Mercado": [
-    "Você sabe claramente quem é o cliente ideal do negócio?",
-    "Você sabe quanto o cliente estaria disposto a pagar pela solução?",
+    "Você sabe claramente quem é o principal tipo de cliente que o negócio pretende atender?",
+    "Você tem uma noção de quanto os clientes estariam dispostos a pagar pelo seu produto ou serviço?",
     "Você já conversou com potenciais clientes sobre sua ideia?",
-    "Você conhece o tamanho estimado do mercado onde vai atuar?",
-    "Sua ideia atende a um nicho específico e bem definido?",
+    "Você tem uma noção do tamanho e do potencial de clientes do mercado onde pretende atuar?",
+    "Sua ideia atende a um público específico e bem definido?",
   ],
+
   "Produto / Serviço & Proposta de valor": [
     "Você consegue explicar sua solução de forma simples e objetiva?",
-    "Sua solução tem diferenciais claros em relação ao que já existe no mercado?",
-    "O modelo de receita do negócio já está definido?",
-    "A entrega do produto/serviço é viável com os recursos iniciais disponíveis?",
-    "A solução permite escalabilidade no médio ou longo prazo?",
+    "Sua solução possui algum diferencial claro em relação às alternativas já existentes no mercado?",
+    "Já está claro como o negócio irá ganhar dinheiro com essa solução?",
+    "É possível entregar o produto ou serviço utilizando os recursos que você tem hoje ou pretende ter no início?",
+    "Esse negócio permite crescer (mais clientes, vendas ou unidades) sem aumentar os custos na mesma proporção?",
   ],
+
   "Operação & Estrutura": [
     "Você sabe como seu produto/serviço será produzido, entregue ou executado?",
     "Já consegue identificar quais funções e profissionais serão necessários?",
-    "Você já tem acesso (ou caminhos de acesso) aos fornecedores e parceiros principais?",
-    "Você possui protótipo, MVP ou qualquer validação inicial da solução?",
-    "O início da operação exige investimento baixo ou moderado?",
+    "Você já tem acesso, contatos ou caminhos claros para fornecedores e parceiros essenciais ao negócio?",
+    "Você já testou a ideia na prática, mesmo que de forma simples (ex.: piloto, teste com clientes ou versão inicial)?",
+    "Você já tem clareza se o investimento inicial necessário é compatível com sua realidade financeira?",
   ],
+
   "Financeiro & Viabilidade": [
-    "Você sabe o valor necessário para iniciar o negócio?",
-    "Já conhece seus custos fixos e variáveis?",
-    "Consegue estimar a receita prevista nos primeiros meses?",
-    "Você sabe qual é o ponto de equilíbrio do negócio?",
-    "Já identificou os principais riscos do negócio e possíveis mitigadores?",
+    "Você sabe quanto de dinheiro será necessário para iniciar o negócio e mantê-lo funcionando nos primeiros meses?",
+    "Você já identificou quais serão os principais custos fixos e variáveis do negócio?",
+    "Você consegue estimar quanto o negócio pode faturar nos primeiros meses de operação?",
+    "Você sabe aproximadamente quanto precisa faturar para cobrir todos os custos e não ter prejuízo?",
+    "Você já identificou os principais riscos financeiros do negócio e formas de reduzir esses riscos?",
   ],
 };
 
@@ -146,13 +150,13 @@ function showScreen(screenId) {
     "screen-perguntas": "2",
     "screen-resultados": "3",
   };
-  const currentStep = stepByScreen[screenId];
+  const activeStep = stepByScreen[screenId];
   document.querySelectorAll(".step-chip").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.step === currentStep);
+    chip.classList.toggle("active", chip.dataset.step === activeStep);
   });
 }
 
-function setFormType(type) {
+function setActiveFormType(type) {
   currentFormType = type;
 
   // selector buttons
@@ -160,41 +164,57 @@ function setFormType(type) {
     btn.classList.toggle("active", btn.dataset.form === type);
   });
 
-  // switch data forms (empresa/pessoa)
+  // show/hide lead forms
   const formEmpresa = $("form-empresa");
   const formPessoa = $("form-pessoa");
-  if (type === "diagnostico") {
-    if (formEmpresa) formEmpresa.style.display = "block";
-    if (formPessoa) formPessoa.style.display = "none";
-  } else {
-    if (formEmpresa) formEmpresa.style.display = "none";
-    if (formPessoa) formPessoa.style.display = "block";
+  if (formEmpresa && formPessoa) {
+    formEmpresa.style.display = type === "diagnostico" ? "block" : "none";
+    formPessoa.style.display = type === "viabilidade" ? "block" : "none";
   }
 
-  // clear errors/results
+  // reset screens and results
+  showScreen("screen-dados");
+  clearResults();
+  clearErrors();
+
+  // rebuild questions for chosen form
+  buildQuestions();
+}
+
+function clearErrors() {
   const errorEl = $("error");
   if (errorEl) errorEl.textContent = "";
+}
 
-  // rebuild questions (screen 2)
-  buildQuestionsForm();
+function clearResults() {
+  const diag = $("diagnostico-parecer");
+  const via = $("viabilidade-parecer");
+  const grid = $("result-grid");
+  const btnPdf = $("btn-pdf");
+
+  if (diag) diag.style.display = "none";
+  if (via) via.style.display = "none";
+  if (grid) grid.innerHTML = "";
+  if (btnPdf) btnPdf.style.display = "none";
 }
 
 /* ============================
-   BUILD QUESTIONS FORM
+   BUILD QUESTIONS
 ============================ */
-function buildQuestionsForm() {
+function buildQuestions() {
   const formEl = $("diagnostico-form");
   if (!formEl) return;
+
   formEl.innerHTML = "";
 
-  const AREAS =
-    currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
+  const areas = currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
 
-  Object.entries(AREAS).forEach(([areaNome, perguntas]) => {
+  Object.entries(areas).forEach(([areaNome, perguntas]) => {
     const areaCard = document.createElement("section");
-    areaCard.className = "area-card";
+    areaCard.className = "area-card card"; // mantém seu estilo
 
     const h2 = document.createElement("h2");
+    h2.className = "card-title";
     h2.textContent = areaNome;
     areaCard.appendChild(h2);
 
@@ -225,7 +245,8 @@ function buildQuestionsForm() {
         spanText.textContent = opt.label;
 
         const spanDesc = document.createElement("span");
-        spanDesc.className = "answer-desc";
+        spanDesc.style.opacity = "0.7";
+        spanDesc.style.fontSize = "0.75rem";
         spanDesc.textContent = ` (${opt.description})`;
 
         label.appendChild(input);
@@ -245,73 +266,13 @@ function buildQuestionsForm() {
 }
 
 /* ============================
-   LEAD SUBMIT (empresa/pessoa)
+   SUBMIT HELPERS
 ============================ */
-async function salvarEmpresa() {
-  const form = $("form-empresa");
-  if (!form) throw new Error("Formulário da empresa não encontrado.");
-
-  const fd = new FormData(form);
-  const payload = Object.fromEntries(fd.entries());
-
-  // normalizações simples
-  payload.numero_unidades = payload.numero_unidades ? Number(payload.numero_unidades) : 0;
-  payload.numero_colaboradores = payload.numero_colaboradores
-    ? Number(payload.numero_colaboradores)
-    : 0;
-
-  const resp = await fetch(API_EMPRESAS, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`Erro ao salvar empresa (${resp.status}): ${t}`);
-  }
-
-  const data = await resp.json();
-  leadId = data.id ?? null;
-  return data;
-}
-
-async function salvarPessoa() {
-  const form = $("form-pessoa");
-  if (!form) throw new Error("Formulário da pessoa não encontrado.");
-
-  const fd = new FormData(form);
-  const payload = Object.fromEntries(fd.entries());
-
-  // map boolean-ish / enums se necessário
-  // (mantive simples)
-
-  const resp = await fetch(API_PESSOAS, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`Erro ao salvar pessoa (${resp.status}): ${t}`);
-  }
-
-  const data = await resp.json();
-  leadId = data.id ?? null;
-  return data;
-}
-
-/* ============================
-   SEND QUESTIONS
-============================ */
-function buildPayloadFromAnswers() {
-  const AREAS =
-    currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
+function collectAnswers() {
+  const areas = currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
 
   const payload = {};
-
-  for (const [areaNome, perguntas] of Object.entries(AREAS)) {
+  for (const [areaNome, perguntas] of Object.entries(areas)) {
     const pontosArea = [];
 
     for (let i = 0; i < perguntas.length; i++) {
@@ -321,9 +282,10 @@ function buildPayloadFromAnswers() {
       );
 
       if (!checked) {
-        throw new Error("Responda todas as perguntas antes de enviar.");
+        throw new Error(
+          "Responda todas as perguntas de todas as áreas antes de enviar."
+        );
       }
-
       pontosArea.push(Number(checked.value));
     }
 
@@ -333,32 +295,16 @@ function buildPayloadFromAnswers() {
   return payload;
 }
 
-async function enviarDiagnostico(payload) {
-  const resp = await fetch(API_DIAGNOSTICO, {
+async function postJson(url, body) {
+  const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload), // RootModel: dict direto
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`Erro ao chamar diagnóstico (${resp.status}): ${t}`);
-  }
-
-  return resp.json();
-}
-
-async function enviarViabilidade(payload) {
-  const resp = await fetch(API_VIABILIDADE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    // ViabilidadeRequest: { respostas: {...} }
-    body: JSON.stringify({ respostas: payload }),
-  });
-
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`Erro ao chamar viabilidade (${resp.status}): ${t}`);
+    const detail = await resp.text();
+    throw new Error(`Erro ao chamar API (${resp.status}): ${detail || "sem detalhes"}`);
   }
 
   return resp.json();
@@ -367,236 +313,248 @@ async function enviarViabilidade(payload) {
 /* ============================
    RENDER RESULTS
 ============================ */
-function renderResultados(data) {
+function renderResultadosDiagnostico(data) {
   const resultadosTitle = $("resultados-title");
-  const resultGrid = $("result-grid");
-  const diagnosticoParecer = $("diagnostico-parecer");
-  const viabilidadeParecer = $("viabilidade-parecer");
+  const grid = $("result-grid");
+  const diagParecerEl = $("diagnostico-parecer");
+  const viaParecerEl = $("viabilidade-parecer");
 
-  if (!resultGrid || !resultadosTitle) return;
+  if (resultadosTitle) resultadosTitle.textContent = "Resultados — Diagnóstico";
+  if (viaParecerEl) viaParecerEl.style.display = "none";
+  if (grid) grid.innerHTML = "";
 
-  resultGrid.innerHTML = "";
-  if (diagnosticoParecer) {
-    diagnosticoParecer.style.display = "none";
-    diagnosticoParecer.innerHTML = "";
+  // Global
+  const globalData = data.global || data.global_;
+  if (diagParecerEl && globalData) {
+    const fb = globalData.feedback_global;
+
+    if (fb) {
+      diagParecerEl.innerHTML = `
+        <h3>Parecer global</h3>
+        <p><strong>Percentual:</strong> ${normalizePercent(globalData.percentual)}%</p>
+        <p><strong>${escapeHtml(fb.titulo || "")}</strong></p>
+        <p style="white-space:pre-line;">${escapeHtml(fb.mensagem || "")}</p>
+        ${
+          Array.isArray(fb.areas_em_alerta) && fb.areas_em_alerta.length
+            ? `<p><strong>Áreas em alerta:</strong> ${fb.areas_em_alerta.map(escapeHtml).join(", ")}</p>`
+            : ""
+        }
+        ${
+          Array.isArray(fb.solucoes) && fb.solucoes.length
+            ? `<p><strong>Soluções recomendadas:</strong></p>
+               <ul>${fb.solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
+            : ""
+        }
+      `;
+      diagParecerEl.style.display = "block";
+    } else {
+      diagParecerEl.style.display = "none";
+    }
   }
-  if (viabilidadeParecer) {
-    viabilidadeParecer.style.display = "none";
-    viabilidadeParecer.innerHTML = "";
+
+  // Areas
+  const areas = data.areas || {};
+  Object.entries(areas).forEach(([area, res]) => {
+    const card = document.createElement("div");
+    card.className = "result-card";
+
+    card.innerHTML = `
+      <h3>${escapeHtml(area)}</h3>
+      <p class="result-score">Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${normalizePercent(res.percentual)}%)</p>
+      <p class="result-message" style="white-space:pre-line;">${escapeHtml(res.mensagem)}</p>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
+function renderResultadosViabilidade(data) {
+  const resultadosTitle = $("resultados-title");
+  const grid = $("result-grid");
+  const diagParecerEl = $("diagnostico-parecer");
+  const viaParecerEl = $("viabilidade-parecer");
+
+  if (resultadosTitle) resultadosTitle.textContent = "Resultados — Viabilidade";
+  if (diagParecerEl) diagParecerEl.style.display = "none";
+  if (grid) grid.innerHTML = "";
+
+  // Global
+  const global = data.global ?? data.parecer_global;
+  const percentualGlobal = normalizePercent(data.percentual_global);
+
+  if (viaParecerEl && global) {
+    const solucoesArr = global.solucoes_ce_infinity || global.solucoes || [];
+    viaParecerEl.innerHTML = `
+      <h3>Parecer global — ${escapeHtml(global.classificacao_global || global.classificacao || "")}</h3>
+      ${
+        global.min_percentual != null && global.max_percentual != null
+          ? `<p class="muted">Faixa: ${global.min_percentual}% a ${global.max_percentual}% • Maturidade: ${percentualGlobal}%</p>`
+          : `<p class="muted">Maturidade: ${percentualGlobal}%</p>`
+      }
+      ${
+        global.frase_impacto
+          ? `<p><strong>${escapeHtml(global.frase_impacto)}</strong></p>`
+          : ""
+      }
+      ${
+        global.parecer_global
+          ? `<p style="white-space:pre-line;">${escapeHtml(global.parecer_global)}</p>`
+          : global.mensagem
+            ? `<p style="white-space:pre-line;">${escapeHtml(global.mensagem)}</p>`
+            : ""
+      }
+      ${
+        global.direcionamento_estrategico
+          ? `<p><strong>Direcionamento:</strong> ${escapeHtml(global.direcionamento_estrategico)}</p>`
+          : ""
+      }
+      ${
+        Array.isArray(solucoesArr) && solucoesArr.length
+          ? `<p><strong>Soluções CE Infinity recomendadas:</strong></p>
+             <ul>${solucoesArr.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
+          : ""
+      }
+      ${
+        global.cta
+          ? `<p><strong>${escapeHtml(global.cta)}</strong></p>`
+          : ""
+      }
+    `;
+    viaParecerEl.style.display = "block";
+  } else if (viaParecerEl) {
+    viaParecerEl.style.display = "none";
   }
 
-  resultadosTitle.textContent =
-    currentFormType === "diagnostico"
-      ? "Resultados (Diagnóstico Empresarial)"
-      : "Resultados (Viabilidade de Novas Ideias)";
+  // Areas
+  const areas = data.areas || {};
+  Object.entries(areas).forEach(([area, res]) => {
+    const card = document.createElement("div");
+    card.className = "result-card";
+
+    card.innerHTML = `
+      <h3>${escapeHtml(area)}</h3>
+      <p class="result-score">Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${normalizePercent(res.percentual)}%)</p>
+      <p class="result-message" style="white-space:pre-line;">${escapeHtml(res.mensagem)}</p>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
+function renderResultados(data) {
+  showScreen("screen-resultados");
 
   if (currentFormType === "diagnostico") {
-    // formato atual:
-    // { global: {percentual, feedback_global{...}}, areas: {...} }
-    const areasData = data.areas || {};
-
-    Object.entries(areasData).forEach(([area, res]) => {
-      const card = document.createElement("div");
-      card.className = "result-card";
-
-      const total = res.total_pontos ?? "-";
-      const max = res.pontuacao_maxima ?? "-";
-      const perc = normalizePercent(res.percentual ?? 0);
-
-      card.innerHTML = `
-        <h3>${escapeHtml(area)}</h3>
-        <p class="result-score">Pontuação: ${total} / ${max} (${perc}%)</p>
-        <p class="result-message">${escapeHtml(res.mensagem ?? "")}</p>
-      `;
-
-      resultGrid.appendChild(card);
-    });
-
-    // GLOBAL vindo do banco (via API)
-    const g = data.global || data.global_ || null;
-    const fg = g?.feedback_global || null;
-
-    if (fg && diagnosticoParecer) {
-      const percGlobal = normalizePercent(g.percentual ?? 0);
-
-      const areasEmAlerta =
-        Array.isArray(fg.areas_em_alerta) && fg.areas_em_alerta.length
-          ? fg.areas_em_alerta
-          : [];
-
-      const solucoes =
-        Array.isArray(fg.solucoes) && fg.solucoes.length ? fg.solucoes : [];
-
-      diagnosticoParecer.style.display = "block";
-      diagnosticoParecer.innerHTML = `
-        <div class="parecer-title">Parecer global — ${escapeHtml(fg.titulo || "")}</div>
-        <div class="parecer-meta">Faixa: ${fg.min_percentual}% a ${fg.max_percentual}% • Global: ${percGlobal}%</div>
-        <div class="parecer-msg" style="white-space: pre-wrap;">${escapeHtml(fg.mensagem || "")}</div>
-
-        ${
-          areasEmAlerta.length
-            ? `
-              <h4 style="margin: 12px 0 6px;">Áreas em alerta</h4>
-              <ul style="margin:0; padding-left: 18px;">
-                ${areasEmAlerta.map((a) => `<li>${escapeHtml(a)}</li>`).join("")}
-              </ul>
-            `
-            : ""
-        }
-
-        ${
-          solucoes.length
-            ? `
-              <h4 style="margin: 12px 0 6px;">Soluções recomendadas</h4>
-              <ul style="margin:0; padding-left: 18px;">
-                ${solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-              </ul>
-            `
-            : ""
-        }
-      `;
-    }
+    renderResultadosDiagnostico(data);
   } else {
-    // viabilidade atual:
-    // { percentual_global, areas: { area: {percentual, mensagem, faixa} } }
-    const areasData = data.areas || {};
-
-    Object.entries(areasData).forEach(([area, res]) => {
-      const card = document.createElement("div");
-      card.className = "result-card";
-
-      const total = res.total_pontos ?? "-";
-      const max = res.pontuacao_maxima ?? "-";
-      const perc = normalizePercent(res.percentual ?? 0);
-
-      const faixaTxt = res.faixa
-        ? `Faixa: ${res.faixa.min_percentual}% a ${res.faixa.max_percentual}%`
-        : "";
-
-      card.innerHTML = `
-        <h3>${escapeHtml(area)}</h3>
-        <p class="result-score">Pontuação: ${total} / ${max} (${perc}%)</p>
-        ${faixaTxt ? `<p class="result-score">${escapeHtml(faixaTxt)}</p>` : ""}
-        ${res.mensagem ? `<p class="result-message">${escapeHtml(res.mensagem)}</p>` : ""}
-      `;
-
-      resultGrid.appendChild(card);
-    });
-
-    // se sua API devolver parecer_global no futuro, já deixei pronto:
-    if (data.parecer_global && viabilidadeParecer) {
-      const pg = data.parecer_global;
-      const maturidade = normalizePercent(
-        data.percentual_maturidade ?? data.percentual_global ?? 0
-      );
-
-      const msg = pg.mensagem || "";
-      const hasSolucoesNoTexto = /Soluções\s*CE\s*Infinity\s*recomendadas/i.test(msg);
-
-      let solucoesHtml = "";
-      if (Array.isArray(pg.solucoes) && pg.solucoes.length && !hasSolucoesNoTexto) {
-        solucoesHtml = `
-          <h4 style="margin: 12px 0 6px;">Soluções CE Infinity recomendadas</h4>
-          <ul style="margin:0; padding-left: 18px;">
-            ${pg.solucoes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-          </ul>
-        `;
-      }
-
-      viabilidadeParecer.style.display = "block";
-      viabilidadeParecer.innerHTML = `
-        <div class="parecer-title">Parecer global — ${escapeHtml(pg.classificacao || "")}</div>
-        <div class="parecer-meta">Faixa: ${pg.min_percentual}% a ${pg.max_percentual}% • Maturidade: ${maturidade}%</div>
-        <div class="parecer-msg" style="white-space: pre-wrap;">${escapeHtml(msg)}</div>
-        ${solucoesHtml}
-      `;
-    }
+    renderResultadosViabilidade(data);
   }
 
-  showScreen("screen-resultados");
+  const btnPdf = $("btn-pdf");
+  if (btnPdf) btnPdf.style.display = "inline-block";
 }
 
 /* ============================
-   EVENTS
+   LEADS (DADOS)
 ============================ */
-function bindEvents() {
-  // selector
+function getFormData(formEl) {
+  const fd = new FormData(formEl);
+  const obj = {};
+  for (const [k, v] of fd.entries()) obj[k] = String(v).trim();
+  return obj;
+}
+
+function validateEmpresa(data) {
+  // regra simples: se segmento=franquia, numero_unidades obrigatório
+  if (data.segmento === "franquia") {
+    const n = Number(data.numero_unidades ?? 0);
+    if (!Number.isFinite(n) || n <= 0) {
+      throw new Error("Informe o Nº de unidades (se franquia).");
+    }
+  }
+}
+
+async function salvarLeadEIrPerguntas() {
+  clearErrors();
+  try {
+    if (currentFormType === "diagnostico") {
+      const formEmpresa = $("form-empresa");
+      if (!formEmpresa) throw new Error("Form de empresa não encontrado.");
+      const data = getFormData(formEmpresa);
+      validateEmpresa(data);
+
+      // POST empresa
+      const resp = await postJson(API_EMPRESAS, data);
+      leadId = resp?.id ?? resp?.empresa_id ?? null;
+    } else {
+      const formPessoa = $("form-pessoa");
+      if (!formPessoa) throw new Error("Form de pessoa não encontrado.");
+      const data = getFormData(formPessoa);
+
+      // POST pessoa
+      const resp = await postJson(API_PESSOAS, data);
+      leadId = resp?.id ?? resp?.pessoa_id ?? null;
+    }
+
+    // vai para perguntas
+    showScreen("screen-perguntas");
+  } catch (err) {
+    console.error(err);
+    const errorEl = $("error");
+    if (errorEl) errorEl.textContent = err.message || "Erro ao salvar dados.";
+  }
+}
+
+/* ============================
+   INIT + EVENTS
+============================ */
+function init() {
+  // selector buttons
   document.querySelectorAll(".selector-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      setFormType(btn.dataset.form);
+      setActiveFormType(btn.dataset.form);
     });
   });
 
-  // avançar (empresa)
-  const btnAvancarDados = $("btn-avancar-dados");
-  if (btnAvancarDados) {
-    btnAvancarDados.addEventListener("click", async () => {
-      const errorEl = $("error");
-      if (errorEl) errorEl.textContent = "";
+  // botões dados -> perguntas
+  const btnAvancarEmpresa = $("btn-avancar-dados");
+  if (btnAvancarEmpresa) btnAvancarEmpresa.addEventListener("click", salvarLeadEIrPerguntas);
 
-      try {
-        await salvarEmpresa();
-        buildQuestionsForm();
-        showScreen("screen-perguntas");
-      } catch (e) {
-        console.error(e);
-        if (errorEl) errorEl.textContent = e.message || "Erro ao salvar empresa.";
-      }
-    });
-  }
-
-  // avançar (pessoa)
   const btnSalvarLead = $("btnSalvarLead");
-  if (btnSalvarLead) {
-    btnSalvarLead.addEventListener("click", async () => {
-      const errorEl = $("error");
-      if (errorEl) errorEl.textContent = "";
-
-      try {
-        await salvarPessoa();
-        buildQuestionsForm();
-        showScreen("screen-perguntas");
-      } catch (e) {
-        console.error(e);
-        if (errorEl) errorEl.textContent = e.message || "Erro ao salvar pessoa.";
-      }
-    });
-  }
+  if (btnSalvarLead) btnSalvarLead.addEventListener("click", salvarLeadEIrPerguntas);
 
   // voltar
   const btnVoltar = $("btn-voltar-dados");
-  if (btnVoltar) {
-    btnVoltar.addEventListener("click", () => {
-      showScreen("screen-dados");
-    });
-  }
+  if (btnVoltar) btnVoltar.addEventListener("click", () => showScreen("screen-dados"));
 
-  // enviar respostas
+  // enviar perguntas
   const btnEnviar = $("btn-enviar");
   if (btnEnviar) {
     btnEnviar.addEventListener("click", async () => {
-      const errorEl = $("error");
-      if (errorEl) errorEl.textContent = "";
+      clearErrors();
 
-      btnEnviar.disabled = true;
-      const oldText = btnEnviar.textContent;
-      btnEnviar.textContent = "Enviando...";
+      const btn = btnEnviar;
+      btn.disabled = true;
+      btn.textContent = "Enviando...";
 
       try {
-        const payload = buildPayloadFromAnswers();
+        const respostas = collectAnswers();
 
-        const data =
-          currentFormType === "diagnostico"
-            ? await enviarDiagnostico(payload)
-            : await enviarViabilidade(payload);
+        const endpoint = currentFormType === "diagnostico" ? API_DIAGNOSTICO : API_VIABILIDADE;
 
+        // Diagnóstico: body é root dict (áreas -> lista)
+        // Viabilidade: schema atual costuma ser {"respostas": {...}} ou root? Aqui enviamos no formato do seu schema atual:
+        const body = currentFormType === "diagnostico" ? respostas : { respostas };
+
+        const data = await postJson(endpoint, body);
         renderResultados(data);
-      } catch (e) {
-        console.error(e);
-        if (errorEl) errorEl.textContent = e.message || "Erro ao enviar.";
+      } catch (err) {
+        console.error(err);
+        const errorEl = $("error");
+        if (errorEl) errorEl.textContent = err.message || "Erro ao enviar.";
       } finally {
-        btnEnviar.disabled = false;
-        btnEnviar.textContent = oldText;
+        btn.disabled = false;
+        btn.textContent = "Enviar";
       }
     });
   }
@@ -605,32 +563,21 @@ function bindEvents() {
   const btnRefazer = $("btn-refazer");
   if (btnRefazer) {
     btnRefazer.addEventListener("click", () => {
-      // limpa respostas
-      document
-        .querySelectorAll(`#diagnostico-form input[type="radio"]`)
-        .forEach((i) => (i.checked = false));
-
-      const errorEl = $("error");
-      if (errorEl) errorEl.textContent = "";
-
+      // limpa radios
+      document.querySelectorAll('#diagnostico-form input[type="radio"]').forEach((i) => (i.checked = false));
+      clearResults();
       showScreen("screen-dados");
+      leadId = null;
     });
   }
 
-  // pdf (impressão)
+  // pdf (print)
   const btnPdf = $("btn-pdf");
-  if (btnPdf) {
-    btnPdf.addEventListener("click", () => window.print());
-  }
+  if (btnPdf) btnPdf.addEventListener("click", () => window.print());
+
+  // default
+  buildQuestions();
+  setActiveFormType("diagnostico");
 }
 
-/* ============================
-   INIT
-============================ */
-(function init() {
-  // default
-  setFormType("diagnostico");
-  buildQuestionsForm();
-  showScreen("screen-dados");
-  bindEvents();
-})();
+document.addEventListener("DOMContentLoaded", init);
