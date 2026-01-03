@@ -18,8 +18,8 @@ const API_BASE = "https://ce-infinity.onrender.com/api";
  * - POST /viabilidade
  */
 const ENDPOINTS = {
-  empresa: `${API_BASE}/leads/empresa`,
-  pessoa: `${API_BASE}/leads/pessoa`,
+  empresa: `${API_BASE}/empresa`,
+  pessoa: `${API_BASE}/pessoa`,
   diagnostico: `${API_BASE}/diagnostico`,
   viabilidade: `${API_BASE}/viabilidade`,
 };
