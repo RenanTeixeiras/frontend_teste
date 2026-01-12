@@ -1,22 +1,17 @@
 /* =========================================================
-   CE Infinity • Diagnóstico & Viabilidade (Front Vanilla)
-   - Mantém layout atual (HTML/CSS)
+   CE Infinity • Front (HTML/CSS/JS)
    - Fluxo: 1) Dados -> 2) Perguntas -> 3) Resultado
-   - Salva lead (empresa/pessoa) antes de ir para perguntas
+   - Tipos: "diagnostico" (empresa) | "viabilidade" (pessoa)
    ========================================================= */
 
 /* =========================
    CONFIG
    ========================= */
+
+// Base da API (Render). Ex.: https://ce-infinity.onrender.com/api
+// IMPORTANTE: se sua API estiver sem prefixo "/api", ajuste aqui.
 const API_BASE = "https://ce-infinity.onrender.com/api";
 
-/**
- * Endpoints (ajuste se necessário):
- * - POST /leads/empresa  (ou /empresa)
- * - POST /leads/pessoa   (ou /pessoa)
- * - POST /diagnostico
- * - POST /viabilidade
- */
 const ENDPOINTS = {
   empresa: `${API_BASE}/empresas`,
   pessoa: `${API_BASE}/pessoas`,
@@ -25,95 +20,129 @@ const ENDPOINTS = {
 };
 
 /* =========================
-   PERGUNTAS (BATENDO COM O BANCO)
+   STATE
    ========================= */
+
+let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
+let empresaId = null; // id retornado ao salvar empresa
+let pessoaId = null;  // id retornado ao salvar pessoa
+let leadPayload = null; // payload enviado ao endpoint de lead
+
+/* =========================
+   HELPERS UI
+   ========================= */
+
+function setActiveSelector(formType) {
+  currentFormType = formType;
+
+  document.querySelectorAll(".selector-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.form === formType);
+  });
+
+  // alterna forms
+  const formEmpresa = document.getElementById("form-empresa");
+  const formPessoa = document.getElementById("form-pessoa");
+
+  if (formEmpresa && formPessoa) {
+    formEmpresa.style.display = formType === "diagnostico" ? "" : "none";
+    formPessoa.style.display = formType === "viabilidade" ? "" : "none";
+  }
+
+  // reseta telas
+  showScreen("dados");
+}
+
+function setActiveStep(step) {
+  document.querySelectorAll(".step-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.step === String(step));
+  });
+}
+
+function showScreen(which) {
+  const screenDados = document.getElementById("screen-dados");
+  const screenPerguntas = document.getElementById("screen-perguntas");
+  const screenResultados = document.getElementById("screen-resultados");
+
+  if (!screenDados || !screenPerguntas || !screenResultados) return;
+
+  screenDados.style.display = which === "dados" ? "" : "none";
+  screenPerguntas.style.display = which === "perguntas" ? "" : "none";
+  screenResultados.style.display = which === "resultados" ? "" : "none";
+
+  if (which === "dados") setActiveStep(1);
+  if (which === "perguntas") setActiveStep(2);
+  if (which === "resultados") setActiveStep(3);
+}
+
+function showError(msg) {
+  const el = document.getElementById("error");
+  if (el) el.textContent = msg || "";
+}
+
+function clearError() {
+  showError("");
+}
+
+function setButtonLoading(btn, isLoading, loadingText = "Enviando...") {
+  if (!btn) return;
+  if (isLoading) {
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = loadingText;
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+  } else {
+    btn.textContent = btn.dataset.originalText || btn.textContent;
+    btn.disabled = false;
+    btn.classList.remove("is-loading");
+  }
+}
+
+/* =========================
+   API
+   ========================= */
+
+async function apiPost(url, body) {
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => "");
+    throw new Error(`Erro ao chamar API (${resp.status}): ${txt || "sem detalhes"}`);
+  }
+
+  return resp.json();
+}
+
+/* =========================
+   QUESTIONS (SEEDS NO FRONT)
+   =========================
+   IMPORTANTE:
+   - Aqui ficam as perguntas do diagnóstico e viabilidade
+   - Você pediu para bater com o banco. Se você já atualizou antes, mantenha.
+   - Caso precise atualizar novamente, altere aqui.
+*/
+
 const DIAGNOSTICO_AREAS = {
-  "Marketing & Vendas": [
-    "A empresa possui uma estratégia clara de aquisição de clientes?",
-    "Existem canais definidos de vendas e marketing (online e offline)?",
-    "A precificação está baseada em custos, mercado e percepção de valor?",
-    "O relacionamento com o cliente é estruturado (CRM, pós-venda, fidelização)?",
-    "A empresa monitora metas e indicadores comerciais (faturamento, conversão, ticket)?",
-  ],
-  "Operações & Logística": [
-    "Os processos operacionais estão documentados e padronizados?",
-    "A empresa possui controle eficiente de estoques e suprimentos (quando aplicável)?",
-    "Há capacidade produtiva adequada para atender a demanda atual?",
-    "A entrega do produto/serviço ocorre com qualidade e dentro dos prazos?",
-    "Existem rotinas de melhoria contínua e redução de desperdícios?",
-  ],
-  "Financeiro & Fiscal": [
-    "A empresa possui controle de fluxo de caixa atualizado e projetado?",
-    "Existe apuração de resultados (DRE) e análise periódica de lucratividade?",
-    "Há planejamento orçamentário e acompanhamento do realizado x orçado?",
-    "A empresa tem controles e rotinas fiscais organizadas e regulares?",
-    "Existem indicadores financeiros acompanhados (margem, endividamento, capital de giro)?",
-  ],
-  "Pessoas & Cultura": [
-    "As responsabilidades e funções estão bem definidas para a equipe?",
-    "A empresa possui rotinas de gestão de desempenho e feedback?",
-    "Existem treinamentos ou capacitações para evolução dos colaboradores?",
-    "O clima organizacional e engajamento são monitorados?",
-    "A empresa possui políticas claras de contratação, retenção e desenvolvimento de talentos?",
-  ],
-  "Processos & Qualidade": [
-    "Os processos internos estão mapeados e possuem responsáveis definidos?",
-    "Existem indicadores (KPIs) para medir eficiência e qualidade?",
-    "A empresa utiliza tecnologia/automação para aumentar produtividade?",
-    "Há rotina de auditoria ou controle de qualidade dos processos?",
-    "Existe um plano de melhoria contínua baseado em análise de dados?",
-  ],
-  "Estratégia & Governança": [
-    "A empresa possui planejamento estratégico formalizado (metas, visão e prioridades)?",
-    "Há acompanhamento periódico de indicadores estratégicos e resultados?",
-    "A tomada de decisão é baseada em dados e relatórios confiáveis?",
-    "Existe governança definida (papéis, responsabilidades, processos decisórios)?",
-    "A empresa possui visão clara de expansão, crescimento e inovação?",
-  ],
+  "Marketing & Vendas": [],
+  "Operações & Logística": [],
+  "Financeiro & Fiscal": [],
+  "Pessoas & Cultura": [],
+  "Processos & Qualidade": [],
+  "Estratégia & Governança": [],
 };
 
 const VIABILIDADE_AREAS = {
-  "Problema & Oportunidade": [
-    "Você consegue explicar claramente qual problema seu negócio pretende resolver?",
-    "Esse problema afeta um público numeroso ou relevante?",
-    "As pessoas afetadas reconhecem que esse problema existe?",
-    "Existem evidências de que esse problema gera demanda por soluções?",
-    "Há tendências favoráveis no mercado relacionadas ao seu negócio?",
-  ],
-  "Público-alvo & Mercado": [
-    "Você sabe claramente quem é o cliente ideal do negócio?",
-    "Você sabe quanto o cliente estaria disposto a pagar pela solução?",
-    "Você já conversou com potenciais clientes sobre sua ideia?",
-    "Você conhece o tamanho estimado do mercado onde vai atuar?",
-    "Sua ideia atende a um nicho específico e bem definido?",
-  ],
-  "Produto / Serviço & Proposta de valor": [
-    "Você consegue explicar sua solução de forma simples e objetiva?",
-    "Sua solução tem diferenciais claros em relação ao que já existe no mercado?",
-    "O modelo de receita do negócio já está definido?",
-    "A entrega do produto/serviço é viável com os recursos iniciais disponíveis?",
-    "A solução permite escalabilidade no médio ou longo prazo?",
-  ],
-  "Operação & Estrutura": [
-    "Você sabe como seu produto/serviço será produzido, entregue ou executado?",
-    "Já consegue identificar quais funções e profissionais serão necessários?",
-    "Você já tem acesso (ou caminhos de acesso) aos fornecedores e parceiros principais?",
-    "Você possui protótipo, MVP ou qualquer validação inicial da solução?",
-    "O início da operação exige investimento baixo ou moderado?",
-  ],
-  "Financeiro & Viabilidade": [
-    "Você sabe o valor necessário para iniciar o negócio?",
-    "Já conhece seus custos fixos e variáveis?",
-    "Consegue estimar a receita prevista nos primeiros meses?",
-    "Você sabe qual é o ponto de equilíbrio do negócio?",
-    "Já identificou os principais riscos do negócio e possíveis mitigadores?",
-  ],
+  "Problema & Oportunidade": [],
+  "Público-alvo & Mercado": [],
+  "Produto / Serviço & Proposta de valor": [],
+  "Operação & Estrutura": [],
+  "Financeiro & Viabilidade": [],
 };
 
-/* =========================
-   OPÇÕES DE RESPOSTA
-   - Ambas usam 0/1/2 (conforme sua API atual)
-   ========================= */
+// Opções de resposta (0/1/2) alinhado com sua última lógica
 const answerOptions = [
   { label: "Sim", value: 2, description: "2 pontos" },
   { label: "Não", value: 1, description: "1 ponto" },
@@ -121,95 +150,22 @@ const answerOptions = [
 ];
 
 /* =========================
-   STATE
+   FORM BUILD (Perguntas)
    ========================= */
-let currentFormType = "diagnostico"; // "diagnostico" | "viabilidade"
-let leadId = null; // opcional se sua API retornar id
-let leadPayload = null; // payload enviado ao endpoint de lead
 
-/* =========================
-   DOM HELPERS
-   ========================= */
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
-
-function show(el) {
-  el.style.display = "";
-}
-function hide(el) {
-  el.style.display = "none";
+function getQuestionsByArea() {
+  return currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
 }
 
-function setStep(step) {
-  // step: 1,2,3
-  $$(".step-chip").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.step === String(step));
-  });
-
-  const screenDados = $("#screen-dados");
-  const screenPerguntas = $("#screen-perguntas");
-  const screenResultados = $("#screen-resultados");
-
-  if (step === 1) {
-    show(screenDados);
-    hide(screenPerguntas);
-    hide(screenResultados);
-  } else if (step === 2) {
-    hide(screenDados);
-    show(screenPerguntas);
-    hide(screenResultados);
-  } else {
-    hide(screenDados);
-    hide(screenPerguntas);
-    show(screenResultados);
-  }
-}
-
-function setFormType(type) {
-  currentFormType = type;
-
-  // Botões selector
-  $$(".selector-btn").forEach((b) => {
-    b.classList.toggle("active", b.dataset.form === type);
-  });
-
-  // Formulários dados
-  const formEmpresa = $("#form-empresa");
-  const formPessoa = $("#form-pessoa");
-
-  if (type === "diagnostico") {
-    show(formEmpresa);
-    hide(formPessoa);
-    $("#resultados-title").textContent = "Resultados por área";
-  } else {
-    hide(formEmpresa);
-    show(formPessoa);
-    $("#resultados-title").textContent = "Resultados por área";
-  }
-
-  // reset do fluxo
-  $("#error").textContent = "";
-  $("#diagnostico-form").innerHTML = "";
-  $("#result-grid").innerHTML = "";
-  $("#diagnostico-parecer").style.display = "none";
-  $("#viabilidade-parecer").style.display = "none";
-  $("#btn-pdf").style.display = "none";
-  leadId = null;
-  leadPayload = null;
-
-  setStep(1);
-}
-
-/* =========================
-   UI: Render Perguntas
-   ========================= */
 function renderPerguntas() {
-  const formEl = $("#diagnostico-form");
+  const formEl = document.getElementById("diagnostico-form");
+  if (!formEl) return;
+
   formEl.innerHTML = "";
 
-  const AREAS = currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
+  const areas = getQuestionsByArea();
 
-  Object.entries(AREAS).forEach(([areaNome, perguntas]) => {
+  Object.entries(areas).forEach(([areaNome, perguntas]) => {
     const areaCard = document.createElement("section");
     areaCard.className = "area-card";
 
@@ -264,107 +220,21 @@ function renderPerguntas() {
   });
 }
 
-/* =========================
-   API Helpers
-   ========================= */
-async function apiPost(url, body) {
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!resp.ok) {
-    const detail = await resp.text().catch(() => "");
-    throw new Error(`Erro ao chamar API (${resp.status}): ${detail || "sem detalhes"}`);
-  }
-
-  return resp.json();
-}
-
-/* =========================
-   Dados -> salvar lead + loading
-   ========================= */
-function setLoadingButton(btn, isLoading, loadingText = "Salvando...") {
-  if (!btn) return;
-  if (isLoading) {
-    btn.dataset.originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = loadingText;
-  } else {
-    btn.disabled = false;
-    btn.textContent = btn.dataset.originalText || btn.textContent;
-  }
-}
-
-async function handleAvancarDados(btn) {
-  $("#error").textContent = "";
-
-  try {
-    const isDiag = currentFormType === "diagnostico";
-
-    const form = isDiag ? $("#form-empresa") : $("#form-pessoa");
-    if (!form) throw new Error("Formulário não encontrado.");
-
-    // validação HTML5
-    if (!form.reportValidity()) {
-      return;
-    }
-
-    // coletar dados
-    const fd = new FormData(form);
-    const data = Object.fromEntries(fd.entries());
-
-    // normalizações simples
-    if (isDiag) {
-      // números
-      if (data.numero_unidades !== undefined && data.numero_unidades !== "") {
-        data.numero_unidades = Number(data.numero_unidades);
-      } else {
-        delete data.numero_unidades;
-      }
-      if (data.numero_colaboradores !== undefined && data.numero_colaboradores !== "") {
-        data.numero_colaboradores = Number(data.numero_colaboradores);
-      }
-    }
-
-    setLoadingButton(btn, true, "Salvando...");
-
-    // salvar lead
-    const endpoint = isDiag ? ENDPOINTS.empresa : ENDPOINTS.pessoa;
-    const saved = await apiPost(endpoint, data);
-
-    // se sua API retorna {id: ...} ou algo do tipo
-    leadId = saved?.id ?? null;
-    leadPayload = data;
-
-    // render perguntas e avançar
-    renderPerguntas();
-    setStep(2);
-  } catch (err) {
-    console.error(err);
-    $("#error").textContent = err?.message || "Erro ao salvar os dados.";
-  } finally {
-    setLoadingButton(btn, false);
-  }
-}
-
-/* =========================
-   Enviar perguntas -> API
-   ========================= */
 function buildPayloadRespostas() {
-  const AREAS = currentFormType === "diagnostico" ? DIAGNOSTICO_AREAS : VIABILIDADE_AREAS;
+  const areas = getQuestionsByArea();
   const payload = {};
 
-  for (const [areaNome, perguntas] of Object.entries(AREAS)) {
+  for (const [areaNome, perguntas] of Object.entries(areas)) {
     const pontosArea = [];
 
     for (let i = 0; i < perguntas.length; i++) {
       const name = `${areaNome}__${i}`;
       const checked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+
       if (!checked) {
-        throw new Error("Responda todas as perguntas de todas as áreas antes de enviar.");
+        throw new Error("Responda todas as perguntas antes de enviar.");
       }
+
       pontosArea.push(Number(checked.value));
     }
 
@@ -374,11 +244,17 @@ function buildPayloadRespostas() {
   return payload;
 }
 
-function renderResultadoCards(areasObj) {
-  const resultGrid = $("#result-grid");
+/* =========================
+   RENDER RESULTADOS
+   ========================= */
+
+function renderCardsPorArea(dataAreas) {
+  const resultGrid = document.getElementById("result-grid");
+  if (!resultGrid) return;
+
   resultGrid.innerHTML = "";
 
-  Object.entries(areasObj).forEach(([area, res]) => {
+  Object.entries(dataAreas || {}).forEach(([area, res]) => {
     const card = document.createElement("div");
     card.className = "result-card";
 
@@ -391,201 +267,282 @@ function renderResultadoCards(areasObj) {
     pScore.textContent = `Pontuação: ${res.total_pontos} / ${res.pontuacao_maxima} (${res.percentual}%)`;
     card.appendChild(pScore);
 
-    const pMsg = document.createElement("p");
-    pMsg.className = "result-message";
-    pMsg.textContent = res.mensagem || "";
-    card.appendChild(pMsg);
+    if (res.faixa?.min_percentual != null && res.faixa?.max_percentual != null) {
+      const pFaixa = document.createElement("p");
+      pFaixa.className = "result-score";
+      pFaixa.textContent = `Faixa: ${res.faixa.min_percentual}% a ${res.faixa.max_percentual}%`;
+      card.appendChild(pFaixa);
+    }
+
+    if (res.mensagem) {
+      const pMsg = document.createElement("p");
+      pMsg.className = "result-message";
+      pMsg.textContent = res.mensagem;
+      card.appendChild(pMsg);
+    }
 
     resultGrid.appendChild(card);
   });
 }
 
-function renderParecerViabilidade(globalObj, percentualGlobal) {
-  const box = $("#viabilidade-parecer");
-  if (!globalObj) {
-    box.style.display = "none";
+function renderParecerViabilidade(data) {
+  const el = document.getElementById("viabilidade-parecer");
+  const elDiag = document.getElementById("diagnostico-parecer");
+
+  if (elDiag) elDiag.style.display = "none";
+  if (!el) return;
+
+  if (!data?.global) {
+    el.style.display = "none";
+    el.innerHTML = "";
     return;
   }
 
-  const faixa = `${globalObj.min_percentual}% a ${globalObj.max_percentual}%`;
-  const solucoes = Array.isArray(globalObj.solucoes_ce_infinity)
-    ? globalObj.solucoes_ce_infinity
-    : [];
+  const g = data.global;
 
-  box.innerHTML = `
-    <h3>Parecer global — ${globalObj.classificacao_global || ""}</h3>
-    <p class="result-score">Faixa: ${faixa} • Maturidade: ${percentualGlobal}%</p>
-    ${globalObj.frase_impacto ? `<p><strong>${globalObj.frase_impacto}</strong></p>` : ""}
-    ${globalObj.parecer_global ? `<p>${globalObj.parecer_global}</p>` : ""}
-    ${globalObj.direcionamento_estrategico ? `<p><strong>Direcionamento estratégico:</strong> ${globalObj.direcionamento_estrategico}</p>` : ""}
+  el.style.display = "block";
+  el.innerHTML = `
+    <h3>Parecer global — ${g.classificacao_global || ""}</h3>
+    <p class="result-score">
+      Faixa: ${g.min_percentual}% a ${g.max_percentual}% • Maturidade: ${data.percentual_global}%
+    </p>
+    ${g.frase_impacto ? `<p><strong>${g.frase_impacto}</strong></p>` : ""}
+    ${g.parecer_global ? `<p>${g.parecer_global}</p>` : ""}
+    ${g.direcionamento_estrategico ? `<p><strong>Direcionamento:</strong> ${g.direcionamento_estrategico}</p>` : ""}
     ${
-      solucoes.length
-        ? `<div class="parecer-solucoes">
-            <strong>Soluções CE Infinity recomendadas</strong>
-            <ul>${solucoes.map((s) => `<li>${s}</li>`).join("")}</ul>
-          </div>`
+      Array.isArray(g.solucoes_ce_infinity) && g.solucoes_ce_infinity.length
+        ? `<p><strong>Soluções CE Infinity recomendadas:</strong></p>
+           <ul>${g.solucoes_ce_infinity.map((s) => `<li>${s}</li>`).join("")}</ul>`
         : ""
     }
-    ${globalObj.cta ? `<p class="parecer-cta"><strong>CTA:</strong> ${globalObj.cta}</p>` : ""}
+    ${g.cta ? `<p><strong>${g.cta}</strong></p>` : ""}
   `;
-  box.style.display = "block";
 }
 
-function renderParecerDiagnostico(globalObj) {
-  const box = $("#diagnostico-parecer");
-  if (!globalObj) {
-    box.style.display = "none";
+function renderParecerDiagnostico(data) {
+  const el = document.getElementById("diagnostico-parecer");
+  const elVia = document.getElementById("viabilidade-parecer");
+
+  if (elVia) elVia.style.display = "none";
+  if (!el) return;
+
+  const g = data?.global;
+  if (!g) {
+    el.style.display = "none";
+    el.innerHTML = "";
     return;
   }
 
-  const fb = globalObj.feedback_global;
-  if (!fb) {
-    box.style.display = "none";
-    return;
-  }
-
-  const faixa = `${fb.min_percentual}% a ${fb.max_percentual}%`;
-  const solucoes = Array.isArray(fb.solucoes) ? fb.solucoes : [];
-  const areasAlerta = Array.isArray(fb.areas_em_alerta) ? fb.areas_em_alerta : [];
-
-  box.innerHTML = `
-    <h3>Parecer global — ${fb.titulo || ""}</h3>
-    <p class="result-score">Faixa: ${faixa} • Desempenho: ${globalObj.percentual}%</p>
-    ${fb.mensagem ? `<p>${fb.mensagem}</p>` : ""}
-
+  // aqui deixo o mínimo (você pode ajustar conforme seu formato final do endpoint)
+  el.style.display = "block";
+  el.innerHTML = `
+    <h3>Parecer global</h3>
+    <p class="result-score">Maturidade: ${g.percentual}%</p>
     ${
-      areasAlerta.length
-        ? `<p><strong>Áreas em alerta:</strong> ${areasAlerta.join(", ")}</p>`
-        : ""
-    }
-
-    ${
-      solucoes.length
-        ? `<div class="parecer-solucoes">
-            <strong>Soluções CE Infinity recomendadas</strong>
-            <ul>${solucoes.map((s) => `<li>${s}</li>`).join("")}</ul>
-          </div>`
+      g.feedback_global
+        ? `
+          <p><strong>${g.feedback_global.titulo || ""}</strong></p>
+          <p>${g.feedback_global.mensagem || ""}</p>
+          ${
+            Array.isArray(g.feedback_global.solucoes) && g.feedback_global.solucoes.length
+              ? `<p><strong>Soluções recomendadas:</strong></p>
+                 <ul>${g.feedback_global.solucoes.map((s) => `<li>${s}</li>`).join("")}</ul>`
+              : ""
+          }
+        `
         : ""
     }
   `;
-
-  box.style.display = "block";
 }
+
+/* =========================
+   FLOW: Dados -> Perguntas
+   ========================= */
+
+async function handleAvancarDados(isFromPessoaForm) {
+  clearError();
+
+  // decide tipo pelo form em foco
+  const isDiag = currentFormType === "diagnostico";
+  const btn = isFromPessoaForm
+    ? document.getElementById("btnSalvarLead")
+    : document.getElementById("btn-avancar-dados");
+
+  setButtonLoading(btn, true, "Salvando...");
+
+  try {
+    const form = isDiag ? document.getElementById("form-empresa") : document.getElementById("form-pessoa");
+    if (!form) throw new Error("Formulário não encontrado no HTML.");
+
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+
+    // Normalizações (caso o backend espere números)
+    if (payload.numero_unidades !== undefined && payload.numero_unidades !== "") {
+      payload.numero_unidades = Number(payload.numero_unidades);
+    }
+    if (payload.numero_colaboradores !== undefined && payload.numero_colaboradores !== "") {
+      payload.numero_colaboradores = Number(payload.numero_colaboradores);
+    }
+
+    // endpoint de lead
+    const url = isDiag ? ENDPOINTS.empresa : ENDPOINTS.pessoa;
+
+    const saved = await apiPost(url, payload);
+
+    // id retornado pelo endpoint de lead
+    const idSalvo = saved?.id ?? null;
+    if (!idSalvo) {
+      throw new Error("A API não retornou o 'id' do lead (empresa/pessoa). Verifique o endpoint.");
+    }
+    if (isDiag) {
+      empresaId = idSalvo;
+    } else {
+      pessoaId = idSalvo;
+    }
+    leadPayload = payload;
+
+    // renderiza perguntas e vai para tela 2
+    renderPerguntas();
+    showScreen("perguntas");
+  } catch (err) {
+    console.error(err);
+    showError(err.message || "Erro ao salvar dados.");
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+/* =========================
+   FLOW: Perguntas -> Resultado
+   ========================= */
 
 async function handleEnviarPerguntas() {
-  $("#error").textContent = "";
+  clearError();
 
-  const btnEnviar = $("#btn-enviar");
-  btnEnviar.disabled = true;
-  const original = btnEnviar.textContent;
-  btnEnviar.textContent = "Enviando...";
+  const btnEnviar = document.getElementById("btn-enviar");
+  setButtonLoading(btnEnviar, true, "Enviando...");
 
   try {
     const respostas = buildPayloadRespostas();
 
-    // montar body conforme endpoints
     const isDiag = currentFormType === "diagnostico";
     const url = isDiag ? ENDPOINTS.diagnostico : ENDPOINTS.viabilidade;
 
+    // garante que existe lead salvo
+    if (isDiag && !empresaId) {
+      throw new Error("Antes de enviar, preencha e salve os dados da empresa.");
+    }
+    if (!isDiag && !pessoaId) {
+      throw new Error("Antes de enviar, preencha e salve seus dados.");
+    }
+
+    // corpo da requisição conforme a API
     const body = isDiag
-      ? respostas
-      : { respostas };
+      ? { empresa_id: empresaId, respostas }
+      : { pessoa_id: pessoaId, respostas };
 
     const data = await apiPost(url, body);
 
-    // Render resultados
-    setStep(3);
-    $("#btn-pdf").style.display = "inline-block";
+    // render resultado
+    showScreen("resultados");
 
-    // Diagnóstico: { global: {...}, areas: {...} }
-    // Viabilidade: { percentual_global, global, areas }
+    // título
+    const title = document.getElementById("resultados-title");
+    if (title) title.textContent = isDiag ? "Resultados do Diagnóstico" : "Resultados da Viabilidade";
+
+    // pareceres
     if (isDiag) {
-      renderParecerDiagnostico(data.global);
-      $("#viabilidade-parecer").style.display = "none";
-      renderResultadoCards(data.areas || {});
+      renderParecerDiagnostico(data);
     } else {
-      const percentualGlobal = data.percentual_global ?? 0;
-      renderParecerViabilidade(data.global, percentualGlobal);
-      $("#diagnostico-parecer").style.display = "none";
-      renderResultadoCards(data.areas || {});
+      renderParecerViabilidade(data);
     }
+
+    // cards por área
+    const areas = data.areas || data; // fallback
+    renderCardsPorArea(areas);
+
+    // botão PDF (impressão)
+    const btnPdf = document.getElementById("btn-pdf");
+    if (btnPdf) btnPdf.style.display = "inline-block";
   } catch (err) {
     console.error(err);
-    $("#error").textContent = err?.message || "Erro ao enviar.";
+    showError(err.message || "Erro ao enviar.");
   } finally {
-    btnEnviar.disabled = false;
-    btnEnviar.textContent = original;
+    setButtonLoading(btnEnviar, false);
   }
 }
 
 /* =========================
-   PDF (impressão)
+   RESET
    ========================= */
-function handlePdf() {
-  window.print();
-}
 
-/* =========================
-   Refazer / Voltar
-   ========================= */
-function handleVoltarDados() {
-  $("#error").textContent = "";
-  setStep(1);
-}
-
-function handleRefazer() {
-  // reseta respostas e volta para dados mantendo tipo
-  $("#diagnostico-form").innerHTML = "";
-  $("#result-grid").innerHTML = "";
-  $("#diagnostico-parecer").style.display = "none";
-  $("#viabilidade-parecer").style.display = "none";
-  $("#btn-pdf").style.display = "none";
-  leadId = null;
+function resetAll() {
+  empresaId = null;
+  pessoaId = null;
   leadPayload = null;
 
-  // limpa forms
-  $("#form-empresa")?.reset();
-  $("#form-pessoa")?.reset();
+  // limpa inputs marcados
+  document.querySelectorAll('#diagnostico-form input[type="radio"]').forEach((i) => (i.checked = false));
 
-  setStep(1);
+  // limpa resultados
+  const grid = document.getElementById("result-grid");
+  if (grid) grid.innerHTML = "";
+
+  const diagParecer = document.getElementById("diagnostico-parecer");
+  const viaParecer = document.getElementById("viabilidade-parecer");
+  if (diagParecer) {
+    diagParecer.innerHTML = "";
+    diagParecer.style.display = "none";
+  }
+  if (viaParecer) {
+    viaParecer.innerHTML = "";
+    viaParecer.style.display = "none";
+  }
+
+  showScreen("dados");
 }
 
 /* =========================
    INIT
    ========================= */
+
 function init() {
-  // Selector tipo formulário
-  $$(".selector-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      setFormType(btn.dataset.form);
-    });
+  // selector
+  document.querySelectorAll(".selector-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setActiveSelector(btn.dataset.form));
   });
 
-  // Botões avançar dados
-  const btnAvancarDados = $("#btn-avancar-dados");
-  const btnSalvarLead = $("#btnSalvarLead");
-
+  // avançar dados (empresa)
+  const btnAvancarDados = document.getElementById("btn-avancar-dados");
   if (btnAvancarDados) {
-    btnAvancarDados.addEventListener("click", () => handleAvancarDados(btnAvancarDados));
+    btnAvancarDados.addEventListener("click", () => handleAvancarDados(false));
   }
+
+  // avançar dados (pessoa)
+  const btnSalvarLead = document.getElementById("btnSalvarLead");
   if (btnSalvarLead) {
-    btnSalvarLead.addEventListener("click", () => handleAvancarDados(btnSalvarLead));
+    btnSalvarLead.addEventListener("click", () => handleAvancarDados(true));
   }
 
-  // Enviar perguntas
-  $("#btn-enviar")?.addEventListener("click", handleEnviarPerguntas);
+  // voltar
+  const btnVoltar = document.getElementById("btn-voltar-dados");
+  if (btnVoltar) btnVoltar.addEventListener("click", () => showScreen("dados"));
 
-  // Voltar
-  $("#btn-voltar-dados")?.addEventListener("click", handleVoltarDados);
+  // enviar
+  const btnEnviar = document.getElementById("btn-enviar");
+  if (btnEnviar) btnEnviar.addEventListener("click", handleEnviarPerguntas);
 
-  // Refazer
-  $("#btn-refazer")?.addEventListener("click", handleRefazer);
+  // pdf
+  const btnPdf = document.getElementById("btn-pdf");
+  if (btnPdf) btnPdf.addEventListener("click", () => window.print());
 
-  // PDF
-  $("#btn-pdf")?.addEventListener("click", handlePdf);
+  // refazer
+  const btnRefazer = document.getElementById("btn-refazer");
+  if (btnRefazer) btnRefazer.addEventListener("click", resetAll);
 
-  // default
-  setFormType("diagnostico");
+  // start
+  setActiveSelector("diagnostico");
 }
 
 document.addEventListener("DOMContentLoaded", init);
