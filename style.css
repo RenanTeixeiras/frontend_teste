@@ -417,3 +417,129 @@ button:disabled{
   .hero-inner{ flex-direction:column; align-items:flex-start; }
   .hero-kpis{ gap: 18px; }
 }
+/* ===== Admin ===== */
+.hero-subtitle {
+  margin: 6px 0 0;
+  opacity: 0.85;
+}
+
+.admin-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-filter-row label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--muted);
+  gap: 6px;
+}
+
+.admin-filter-row input {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.metric-section {
+  margin: 28px 0;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.metric-card h3 {
+  margin: 0 0 10px;
+  color: #0b2d44;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow);
+}
+
+.kpi-card span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.kpi-card strong {
+  font-size: 1.5rem;
+  color: #0b2d44;
+}
+
+.metric-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.metric-table th,
+.metric-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.metric-table th {
+  color: #0b2d44;
+  font-weight: 700;
+}
+
+.metric-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.mini-table h4 {
+  margin: 14px 0 8px;
+  font-size: 1rem;
+  color: #0b2d44;
+}
+
+.empty-state {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .admin-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

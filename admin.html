@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CE Infinity • Admin Relatórios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">CE</div>
+          <div class="brand-text">
+            <div class="brand-name">CE INFINITY</div>
+            <div class="brand-sub">CONSULTORIA EMPRESARIAL</div>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a href="./index.html" class="nav-link">Voltar ao site</a>
+        </nav>
+
+        <span class="nav-cta">Admin</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <div class="hero-inner">
+          <div>
+            <div class="section-eyebrow">ADMIN</div>
+            <h1>Relatórios e métricas</h1>
+            <p id="period-range" class="hero-subtitle"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="container">
+        <div class="admin-filters card">
+          <div>
+            <h2 class="card-title">Período</h2>
+            <p class="card-sub">Defina o intervalo para atualizar as métricas.</p>
+          </div>
+          <div class="admin-filter-row">
+            <label>
+              Início
+              <input type="date" id="start-date" />
+            </label>
+            <label>
+              Fim
+              <input type="date" id="end-date" />
+            </label>
+            <button type="button" class="primary" id="btn-load">Atualizar</button>
+          </div>
+        </div>
+
+        <section class="metric-section">
+          <h2 class="section-title">Visão geral</h2>
+          <div id="kpi-grid" class="kpi-grid"></div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Distribuição de maturidade</h2>
+          <div class="admin-grid">
+            <div class="metric-card">
+              <h3>Diagnóstico</h3>
+              <div id="maturidade-diagnostico"></div>
+            </div>
+            <div class="metric-card">
+              <h3>Viabilidade</h3>
+              <div id="maturidade-viabilidade"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Ranking de áreas</h2>
+          <div class="admin-grid">
+            <div class="metric-card">
+              <h3>Diagnóstico</h3>
+              <div id="ranking-diagnostico"></div>
+            </div>
+            <div class="metric-card">
+              <h3>Viabilidade</h3>
+              <div id="ranking-viabilidade"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Áreas em alerta (abaixo de 65%)</h2>
+          <div class="metric-card">
+            <div id="alertas-segmento"></div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Segmentação</h2>
+          <div class="admin-grid">
+            <div class="metric-card">
+              <h3>Diagnóstico</h3>
+              <div id="segmentacao-diagnostico"></div>
+            </div>
+            <div class="metric-card">
+              <h3>Viabilidade</h3>
+              <div id="segmentacao-viabilidade"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Perguntas críticas</h2>
+          <div class="metric-card">
+            <div id="perguntas-criticas"></div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Top soluções recomendadas</h2>
+          <div class="admin-grid">
+            <div class="metric-card">
+              <h3>Diagnóstico</h3>
+              <div id="solucoes-diagnostico"></div>
+            </div>
+            <div class="metric-card">
+              <h3>Viabilidade</h3>
+              <div id="solucoes-viabilidade"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Funil por origem</h2>
+          <div class="metric-card">
+            <div id="funil-origem"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./admin.js"></script>
+  </body>
+</html>
