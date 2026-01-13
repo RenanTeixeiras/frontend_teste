@@ -453,6 +453,14 @@ button:disabled{
   font-size: 0.95rem;
 }
 
+.admin-filter-row select {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+}
+
 .metric-section {
   margin: 28px 0;
 }

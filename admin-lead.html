@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CE Infinity • Detalhe do Lead</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">CE</div>
+          <div class="brand-text">
+            <div class="brand-name">CE INFINITY</div>
+            <div class="brand-sub">CONSULTORIA EMPRESARIAL</div>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a href="./admin.html" class="nav-link">Voltar ao admin</a>
+          <a href="./index.html" class="nav-link">Site</a>
+        </nav>
+
+        <span class="nav-cta">Admin</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <div class="hero-inner">
+          <div>
+            <div class="section-eyebrow">ADMIN</div>
+            <h1>Detalhe do lead</h1>
+            <p class="hero-subtitle">Consulte as respostas completas e o parecer global.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="container">
+        <div class="admin-filters card">
+          <div>
+            <h2 class="card-title">Buscar avaliação</h2>
+            <p class="card-sub">Informe o tipo e o ID do lead cadastrado.</p>
+          </div>
+          <div class="admin-filter-row">
+            <label>
+              Tipo
+              <select id="lead-tipo">
+                <option value="diagnostico">Diagnóstico (empresa)</option>
+                <option value="viabilidade">Viabilidade (pessoa)</option>
+              </select>
+            </label>
+            <label>
+              Lead ID
+              <input type="number" id="lead-id" min="1" placeholder="Ex: 12" />
+            </label>
+            <button type="button" class="primary" id="btn-load-lead">Buscar</button>
+          </div>
+        </div>
+
+        <section class="metric-section">
+          <div class="admin-grid">
+            <div class="metric-card">
+              <h3>Dados do lead</h3>
+              <div id="lead-info"></div>
+            </div>
+            <div class="metric-card">
+              <h3>Resultado global</h3>
+              <div id="lead-global"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Feedbacks por área</h2>
+          <div id="lead-areas" class="admin-grid"></div>
+        </section>
+
+        <section class="metric-section">
+          <h2 class="section-title">Respostas por pergunta</h2>
+          <div id="lead-perguntas" class="metric-card"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./admin-lead.js"></script>
+  </body>
+</html>
