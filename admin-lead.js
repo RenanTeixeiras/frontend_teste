@@ -112,15 +112,20 @@ function renderPerguntas(areas) {
 async function loadLead() {
   const tipo = $("#lead-tipo").value;
   const leadId = $("#lead-id").value;
+  const leadNome = $("#lead-nome").value.trim();
 
-  if (!leadId) {
-    alert("Informe o ID do lead.");
+  if (!leadId && !leadNome) {
+    alert("Informe o ID do lead ou o nome para buscar.");
     return;
   }
 
   const url = new URL(`${API_BASE}/admin/lead-result`);
   url.searchParams.set("tipo", tipo);
-  url.searchParams.set("lead_id", leadId);
+  if (leadId) {
+    url.searchParams.set("lead_id", leadId);
+  } else {
+    url.searchParams.set("nome", leadNome);
+  }
 
   const resp = await fetch(url.toString());
   if (!resp.ok) {
@@ -129,6 +134,14 @@ async function loadLead() {
   }
 
   const data = await resp.json();
+
+  if (data.match_info?.leads_encontrados > 1) {
+    $("#lead-match").innerHTML = `<p class="empty-state">Foram encontrados ${data.match_info.leads_encontrados} leads. Exibindo o mais recente.</p>`;
+  } else if (data.match_info?.leads_encontrados === 1) {
+    $("#lead-match").innerHTML = `<p class="empty-state">Busca por nome: ${data.match_info.nome_busca}.</p>`;
+  } else {
+    $("#lead-match").innerHTML = "";
+  }
 
   $("#lead-info").innerHTML = renderKeyValue(data.lead);
   $("#lead-global").innerHTML = renderGlobal(data.global, data.tipo);
