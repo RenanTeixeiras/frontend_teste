@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>CE Infinity • Detalhe do Lead</title>
+    <title>CE Infinity • Leads</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="./style.css" />
   </head>
@@ -20,7 +20,6 @@
 
         <nav class="nav">
           <a href="./admin.html" class="nav-link">Dashboard</a>
-          <a href="./admin-leads.html" class="nav-link">Leads</a>
           <a href="./index.html" class="nav-link">Site</a>
         </nav>
 
@@ -33,49 +32,28 @@
         <div class="hero-inner">
           <div>
             <div class="section-eyebrow">ADMIN</div>
-            <h1>Detalhe do lead</h1>
-            <p class="hero-subtitle">Consulte as respostas completas e o parecer global.</p>
+            <h1>Leads cadastrados</h1>
+            <p class="hero-subtitle">Selecione um lead para ver o resultado completo.</p>
           </div>
         </div>
       </section>
 
       <section class="container">
-        <div class="admin-filters card">
-          <div>
-            <h2 class="card-title">Resultado selecionado</h2>
-            <p class="card-sub">Use a lista de leads para selecionar um registro.</p>
-          </div>
-          <div class="admin-filter-row">
-            <a href="./admin-leads.html" class="primary">Voltar para lista de leads</a>
-          </div>
-        </div>
-
         <section class="metric-section">
           <div class="admin-grid">
             <div class="metric-card">
-              <h3>Dados do lead</h3>
-              <div id="lead-match"></div>
-              <div id="lead-info"></div>
+              <h3>Diagnóstico (empresas)</h3>
+              <div id="leads-diagnostico"></div>
             </div>
             <div class="metric-card">
-              <h3>Resultado global</h3>
-              <div id="lead-global"></div>
+              <h3>Viabilidade (pessoas)</h3>
+              <div id="leads-viabilidade"></div>
             </div>
           </div>
-        </section>
-
-        <section class="metric-section">
-          <h2 class="section-title">Feedbacks por área</h2>
-          <div id="lead-areas" class="admin-grid"></div>
-        </section>
-
-        <section class="metric-section">
-          <h2 class="section-title">Respostas por pergunta</h2>
-          <div id="lead-perguntas" class="metric-card"></div>
         </section>
       </section>
     </main>
 
-    <script src="./admin-lead.js"></script>
+    <script src="./admin-leads.js"></script>
   </body>
 </html>

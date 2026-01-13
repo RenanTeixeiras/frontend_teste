@@ -110,11 +110,12 @@ function renderPerguntas(areas) {
 }
 
 async function loadLead() {
-  const tipo = $("#lead-tipo").value;
-  const leadId = $("#lead-select").value;
+  const params = new URLSearchParams(window.location.search);
+  const tipo = params.get("tipo");
+  const leadId = params.get("lead_id");
 
-  if (!leadId) {
-    alert("Selecione um lead.");
+  if (!tipo || !leadId) {
+    $("#lead-info").innerHTML = '<p class="empty-state">Selecione um lead na lista para ver o resultado.</p>';
     return;
   }
 
@@ -138,58 +139,10 @@ async function loadLead() {
   $("#lead-perguntas").innerHTML = renderPerguntas(data.areas);
 }
 
-async function searchLeads() {
-  const tipo = $("#lead-tipo").value;
-  const leadNome = $("#lead-nome").value.trim();
-
-  if (!leadNome) {
-    alert("Informe um nome para buscar.");
-    return;
-  }
-
-  const url = new URL(`${API_BASE}/admin/lead-search`);
-  url.searchParams.set("tipo", tipo);
-  url.searchParams.set("nome", leadNome);
-
-  const resp = await fetch(url.toString());
-  if (!resp.ok) {
-    const detail = await resp.text().catch(() => "");
-    throw new Error(detail || `Erro ${resp.status} ao buscar leads.`);
-  }
-
-  const data = await resp.json();
-  const select = $("#lead-select");
-  const options = data.leads || [];
-
-  select.innerHTML = '<option value="">Selecione…</option>';
-  options.forEach((lead) => {
-    const option = document.createElement("option");
-    option.value = lead.id;
-    option.textContent = `${lead.nome} (ID ${lead.id})`;
-    select.appendChild(option);
-  });
-
-  if (options.length) {
-    select.value = options[0].id;
-    $("#lead-match").innerHTML = `<p class="empty-state">Encontrados ${data.total} leads.</p>`;
-  } else {
-    $("#lead-match").innerHTML = '<p class="empty-state">Nenhum lead encontrado.</p>';
-  }
-}
-
 function init() {
-  $("#btn-search-lead").addEventListener("click", () => {
-    searchLeads().catch((err) => {
-      console.error(err);
-      alert(err.message || "Erro ao buscar leads.");
-    });
-  });
-
-  $("#btn-load-lead").addEventListener("click", () => {
-    loadLead().catch((err) => {
-      console.error(err);
-      alert(err.message || "Erro ao buscar avaliação.");
-    });
+  loadLead().catch((err) => {
+    console.error(err);
+    $("#lead-info").innerHTML = '<p class="empty-state">Erro ao carregar avaliação.</p>';
   });
 }
 

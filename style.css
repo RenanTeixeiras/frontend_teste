@@ -545,6 +545,32 @@ button:disabled{
   font-size: 0.9rem;
 }
 
+.lead-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lead-list a {
+  color: #0b2d44;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.lead-list a:hover {
+  text-decoration: underline;
+}
+
+.lead-meta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
 @media (max-width: 900px) {
   .admin-filters {
     flex-direction: column;
