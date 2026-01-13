@@ -111,21 +111,16 @@ function renderPerguntas(areas) {
 
 async function loadLead() {
   const tipo = $("#lead-tipo").value;
-  const leadId = $("#lead-id").value;
-  const leadNome = $("#lead-nome").value.trim();
+  const leadId = $("#lead-select").value;
 
-  if (!leadId && !leadNome) {
-    alert("Informe o ID do lead ou o nome para buscar.");
+  if (!leadId) {
+    alert("Selecione um lead.");
     return;
   }
 
   const url = new URL(`${API_BASE}/admin/lead-result`);
   url.searchParams.set("tipo", tipo);
-  if (leadId) {
-    url.searchParams.set("lead_id", leadId);
-  } else {
-    url.searchParams.set("nome", leadNome);
-  }
+  url.searchParams.set("lead_id", leadId);
 
   const resp = await fetch(url.toString());
   if (!resp.ok) {
@@ -135,13 +130,7 @@ async function loadLead() {
 
   const data = await resp.json();
 
-  if (data.match_info?.leads_encontrados > 1) {
-    $("#lead-match").innerHTML = `<p class="empty-state">Foram encontrados ${data.match_info.leads_encontrados} leads. Exibindo o mais recente.</p>`;
-  } else if (data.match_info?.leads_encontrados === 1) {
-    $("#lead-match").innerHTML = `<p class="empty-state">Busca por nome: ${data.match_info.nome_busca}.</p>`;
-  } else {
-    $("#lead-match").innerHTML = "";
-  }
+  $("#lead-match").innerHTML = "";
 
   $("#lead-info").innerHTML = renderKeyValue(data.lead);
   $("#lead-global").innerHTML = renderGlobal(data.global, data.tipo);
@@ -149,7 +138,53 @@ async function loadLead() {
   $("#lead-perguntas").innerHTML = renderPerguntas(data.areas);
 }
 
+async function searchLeads() {
+  const tipo = $("#lead-tipo").value;
+  const leadNome = $("#lead-nome").value.trim();
+
+  if (!leadNome) {
+    alert("Informe um nome para buscar.");
+    return;
+  }
+
+  const url = new URL(`${API_BASE}/admin/lead-search`);
+  url.searchParams.set("tipo", tipo);
+  url.searchParams.set("nome", leadNome);
+
+  const resp = await fetch(url.toString());
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => "");
+    throw new Error(detail || `Erro ${resp.status} ao buscar leads.`);
+  }
+
+  const data = await resp.json();
+  const select = $("#lead-select");
+  const options = data.leads || [];
+
+  select.innerHTML = '<option value="">Selecione…</option>';
+  options.forEach((lead) => {
+    const option = document.createElement("option");
+    option.value = lead.id;
+    option.textContent = `${lead.nome} (ID ${lead.id})`;
+    select.appendChild(option);
+  });
+
+  if (options.length) {
+    select.value = options[0].id;
+    $("#lead-match").innerHTML = `<p class="empty-state">Encontrados ${data.total} leads.</p>`;
+  } else {
+    $("#lead-match").innerHTML = '<p class="empty-state">Nenhum lead encontrado.</p>';
+  }
+}
+
 function init() {
+  $("#btn-search-lead").addEventListener("click", () => {
+    searchLeads().catch((err) => {
+      console.error(err);
+      alert(err.message || "Erro ao buscar leads.");
+    });
+  });
+
   $("#btn-load-lead").addEventListener("click", () => {
     loadLead().catch((err) => {
       console.error(err);
